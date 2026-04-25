@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install root dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build control-plane (TypeScript)
+        run: npm --prefix control-plane run build
+
+      - name: Rust build
+        run: cargo build --manifest-path rust-core/Cargo.toml
+
+      - name: Rust tests
+        run: cargo test --manifest-path rust-core/Cargo.toml
+
+      - name: Run Solidity contract tests
+        run: npm run test:contracts
+
+      - name: Optional: Run npm audit (root)
+        run: npm audit --audit-level=high || true

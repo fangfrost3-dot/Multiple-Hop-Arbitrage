@@ -1,6 +1,6 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import { AbiCoder, Contract, Interface, JsonRpcProvider, NonceManager, Wallet, type TransactionRequest } from "ethers";
+import { AbiCoder, Contract, Interface, JsonRpcProvider, Wallet, type TransactionRequest } from "ethers";
 import { createLogger } from "./logger.js";
 import { flashLoanExecutorAbi } from "./executorAbi.js";
 import type { AppConfig } from "./config.js";
@@ -15,12 +15,45 @@ import type {
   SwapRouteConfig,
 } from "./types.js";
 
+class NonceCoordinator {
+  private provider: JsonRpcProvider;
+  private address: string;
+  private nextNonce: number | null = null;
+  private pending: Promise<void> = Promise.resolve();
+
+  constructor(provider: JsonRpcProvider, address: string) {
+    this.provider = provider;
+    this.address = address;
+  }
+
+  async acquire(): Promise<number> {
+    await this.pending;
+    let release: () => void;
+    this.pending = new Promise((res) => (release = res));
+    try {
+      if (this.nextNonce === null) {
+        this.nextNonce = await this.provider.getTransactionCount(this.address, "pending");
+      }
+      const nonce = this.nextNonce!;
+      this.nextNonce = nonce + 1;
+      return nonce;
+    } finally {
+      release!();
+    }
+  }
+
+  setProvider(provider: JsonRpcProvider) {
+    this.provider = provider;
+  }
+}
+
 export class ExecutorClient {
   private readonly log = createLogger("executor");
   private readonly provider?: JsonRpcProvider;
-  private readonly signer?: NonceManager;
   private readonly relayProvider?: JsonRpcProvider;
-  private readonly relaySigner?: NonceManager;
+  private readonly signerWallet?: Wallet;
+  private readonly address?: string;
+  private nonceCoordinator?: NonceCoordinator;
   private readonly submissionMode: "public_only" | "relay_preferred" | "relay_only";
   private readonly contractAddress?: string;
   private readonly profitRecipient?: string;
@@ -89,12 +122,17 @@ export class ExecutorClient {
 
     if (config.RPC_URL && config.EXECUTOR_PRIVATE_KEY) {
       this.provider = new JsonRpcProvider(config.RPC_URL);
-      this.signer = new NonceManager(new Wallet(config.EXECUTOR_PRIVATE_KEY, this.provider));
+      this.signerWallet = new Wallet(config.EXECUTOR_PRIVATE_KEY);
+      this.address = this.signerWallet.address.toLowerCase();
     }
 
     if (config.PRIVATE_RELAY_RPC_URL && config.EXECUTOR_PRIVATE_KEY) {
       this.relayProvider = new JsonRpcProvider(config.PRIVATE_RELAY_RPC_URL);
-      this.relaySigner = new NonceManager(new Wallet(config.EXECUTOR_PRIVATE_KEY, this.relayProvider));
+    }
+
+    if (this.signerWallet && (this.provider || this.relayProvider)) {
+      const probe = this.provider ?? this.relayProvider!;
+      this.nonceCoordinator = new NonceCoordinator(probe, this.signerWallet.address);
     }
   }
 
@@ -154,17 +192,13 @@ export class ExecutorClient {
       params,
     ]);
 
-    const estimationSigner = this.relaySigner ?? this.signer;
-    if (!estimationSigner) {
+    const estimationAddress = this.address;
+    if (!estimationAddress || !this.provider) {
       this.log.info({ cycleId: candidate.cycle_id }, "no signer configured for execution submission");
       return;
     }
 
-    const gasEstimate = await this.provider.estimateGas({
-      to: this.contractAddress,
-      from: await estimationSigner.getAddress(),
-      data: calldata,
-    });
+    const gasEstimate = await this.provider.estimateGas({ to: this.contractAddress, from: estimationAddress, data: calldata });
     const feeData = await this.provider.getFeeData();
     const gasPrice = feeData.maxFeePerGas ?? feeData.gasPrice;
     if (!gasPrice) {
@@ -505,13 +539,20 @@ export class ExecutorClient {
   private async sendTransaction(
     txRequest: TransactionRequest,
     cycleId: string,
-  ): Promise<{ tx: Awaited<ReturnType<NonceManager["sendTransaction"]>>; submissionTarget: "public" | "relay" }> {
+  ): Promise<{ tx: any; submissionTarget: "public" | "relay" }> {
     const relayAllowed = this.submissionMode !== "public_only";
     const publicAllowed = this.submissionMode !== "relay_only";
 
-    if (relayAllowed && this.relaySigner) {
+    if (!this.signerWallet) {
+      throw new Error("no available submission path for executor");
+    }
+
+    if (relayAllowed && this.relayProvider) {
       try {
-        const tx = await this.relaySigner.sendTransaction(txRequest);
+        const nonce = await this.nonceCoordinator?.acquire();
+        if (nonce !== undefined) txRequest.nonce = nonce;
+        const signer = this.signerWallet.connect(this.relayProvider);
+        const tx = await signer.sendTransaction(txRequest);
         return { tx, submissionTarget: "relay" };
       } catch (error) {
         this.log.error({ cycleId, error }, "relay submission failed");
@@ -521,8 +562,11 @@ export class ExecutorClient {
       }
     }
 
-    if (publicAllowed && this.signer) {
-      const tx = await this.signer.sendTransaction(txRequest);
+    if (publicAllowed && this.provider) {
+      const nonce = await this.nonceCoordinator?.acquire();
+      if (nonce !== undefined) txRequest.nonce = nonce;
+      const signer = this.signerWallet.connect(this.provider);
+      const tx = await signer.sendTransaction(txRequest);
       return { tx, submissionTarget: "public" };
     }
 
@@ -589,8 +633,11 @@ export class ExecutorClient {
     return validKinds.length > 0 ? new Set(validKinds) : undefined;
   }
 
-  private signerForTarget(target: "public" | "relay"): NonceManager | undefined {
-    return target === "relay" ? this.relaySigner : this.signer;
+  private signerForTarget(target: "public" | "relay") {
+    if (!this.signerWallet) return undefined;
+    const provider = target === "relay" ? this.relayProvider ?? this.provider : this.provider ?? this.relayProvider;
+    if (!provider) return undefined;
+    return this.signerWallet.connect(provider);
   }
 
   private recordFailure(kind: "dropped" | "reverted"): void {

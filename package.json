@@ -16,13 +16,11 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {
-    "hardhat": "^3.4.0"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "hardhat": "^3.4.0",
     "@nomicfoundation/hardhat-ethers": "^4.0.8",
-    "@nomicfoundation/hardhat-ignition": "^0.15.16",
-    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.4",
+    
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/mocha": "^10.0.10",
