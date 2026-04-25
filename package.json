@@ -1,0 +1,36 @@
+{
+  "name": "rn",
+  "version": "1.0.0",
+  "description": "Multi-hop arbitrage workspace with TypeScript control plane, Rust hot-path engine, and Solidity flash-loan executor.",
+  "main": "index.js",
+  "scripts": {
+    "build:contracts": "npx hardhat compile",
+    "test:contracts": "npx hardhat test",
+    "test": "npm run test:contracts",
+    "build:rust": "cargo build --manifest-path rust-core/Cargo.toml",
+    "run:rust": "cargo run --manifest-path rust-core/Cargo.toml",
+    "build:control-plane": "npm --prefix control-plane run build",
+    "run:control-plane": "npm --prefix control-plane run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "hardhat": "^3.4.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.8",
+    "@nomicfoundation/hardhat-ignition": "^3.1.2",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.4",
+    "@types/chai": "^5.2.3",
+    "@types/chai-as-promised": "^8.0.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.19.17",
+    "chai": "^6.2.2",
+    "ethers": "^6.16.0",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+    "mocha": "^11.7.5",
+    "typescript": "~5.8.0"
+  }
+}
