@@ -6,6 +6,7 @@
   "scripts": {
     "build:contracts": "npx hardhat compile",
     "test:contracts": "npx hardhat test",
+    "test:fork": "npx hardhat test test/ForkSmoke.ts",
     "test": "npm run test:contracts",
     "build:rust": "cargo build --manifest-path rust-core/Cargo.toml",
     "run:rust": "cargo run --manifest-path rust-core/Cargo.toml",
