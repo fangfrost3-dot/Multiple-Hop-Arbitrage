@@ -16,7 +16,9 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {},
+  "dependencies": {
+    "dotenv": "^16.6.1"
+  },
   "devDependencies": {
     "hardhat": "^3.4.0",
     "@nomicfoundation/hardhat-ethers": "^4.0.8",

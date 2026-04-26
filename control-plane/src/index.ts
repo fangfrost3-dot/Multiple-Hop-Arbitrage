@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createServer } from "node:http";
 import { loadBootstrapPools } from "./bootstrap.js";
 import { loadConfig } from "./config.js";
