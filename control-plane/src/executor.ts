@@ -542,6 +542,11 @@ export class ExecutorClient {
   ): Promise<{ tx: any; submissionTarget: "public" | "relay" }> {
     const relayAllowed = this.submissionMode !== "public_only";
     const publicAllowed = this.submissionMode !== "relay_only";
+    const nonce = await this.nonceCoordinator?.acquire();
+
+    if (nonce !== undefined) {
+      txRequest.nonce = nonce;
+    }
 
     if (!this.signerWallet) {
       throw new Error("no available submission path for executor");
@@ -549,8 +554,6 @@ export class ExecutorClient {
 
     if (relayAllowed && this.relayProvider) {
       try {
-        const nonce = await this.nonceCoordinator?.acquire();
-        if (nonce !== undefined) txRequest.nonce = nonce;
         const signer = this.signerWallet.connect(this.relayProvider);
         const tx = await signer.sendTransaction(txRequest);
         return { tx, submissionTarget: "relay" };
@@ -563,8 +566,6 @@ export class ExecutorClient {
     }
 
     if (publicAllowed && this.provider) {
-      const nonce = await this.nonceCoordinator?.acquire();
-      if (nonce !== undefined) txRequest.nonce = nonce;
       const signer = this.signerWallet.connect(this.provider);
       const tx = await signer.sendTransaction(txRequest);
       return { tx, submissionTarget: "public" };

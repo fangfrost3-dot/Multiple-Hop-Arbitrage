@@ -25,7 +25,10 @@ jobs:
           toolchain: stable
 
       - name: Install root dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Install control-plane dependencies
+        run: npm ci --prefix control-plane
 
       - name: Build control-plane (TypeScript)
         run: npm --prefix control-plane run build
