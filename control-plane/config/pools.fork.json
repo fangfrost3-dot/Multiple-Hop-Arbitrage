@@ -1,11 +1,41 @@
 [
   {
+    "kind": "v2_factory",
+    "dex": "camelot",
+    "factory": "0x6EcCab422D763aC031210895C81787E87B43A652",
+    "tokens": [
+      "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+    ],
+    "feeBps": 30
+  },
+  {
+    "kind": "v2_factory",
+    "dex": "camelot",
+    "factory": "0x6EcCab422D763aC031210895C81787E87B43A652",
+    "tokens": [
+      "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "0x912CE59144191C1204E64559FE8253a0e49E6548"
+    ],
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uniswap-weth-arb-v3",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc6f780497a95e246eb9449f5e4770916dcd6396a",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 5
+  },
+  {
     "kind": "v2",
-    "poolId": "replace-with-real-v2-pool",
-    "dex": "replace-me",
-    "pair": "0x0000000000000000000000000000000000000000",
-    "tokenIn": "0x0000000000000000000000000000000000000000",
-    "tokenOut": "0x0000000000000000000000000000000000000000",
+    "poolId": "camelot-arb-weth-v2",
+    "dex": "camelot",
+    "pair": "0xa6c5c7d189fa4eb5af8ba34e63dcdd3a635d433f",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
     "feeBps": 30
   }
 ]

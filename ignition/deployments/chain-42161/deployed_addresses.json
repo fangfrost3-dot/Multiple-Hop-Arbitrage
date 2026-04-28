@@ -1,0 +1,5 @@
+{
+  "FlashLoanExecutorModule#FlashLoanExecutor": "0x9cDDfaCA77a6Cf77B17249bbD9817bA20969af53",
+  "DexAdaptersModule#UniswapV2Adapter": "0x4BF6493866a963c8F30eAA5acd3B09c45431Ca12",
+  "DexAdaptersModule#UniswapV3Adapter": "0x71AB046Be68AFAFEA0792b4c5821d669DD3d8Fbe"
+}

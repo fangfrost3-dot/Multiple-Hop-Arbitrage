@@ -5,6 +5,7 @@ import { createLogger } from "./logger.js";
 export class RustBridge extends EventEmitter {
     process;
     log = createLogger("rust-bridge");
+    readySeen = false;
     constructor(binaryPath) {
         super();
         this.process = spawn(binaryPath, [], {
@@ -13,6 +14,9 @@ export class RustBridge extends EventEmitter {
         const rl = readline.createInterface({ input: this.process.stdout });
         rl.on("line", (line) => {
             const message = JSON.parse(line);
+            if (message.type === "ready") {
+                this.readySeen = true;
+            }
             if (message.type === "candidate") {
                 this.emit("candidate", {
                     cycle_id: message.cycle_id,
@@ -26,6 +30,13 @@ export class RustBridge extends EventEmitter {
             }
             this.emit(message.type, message);
         });
+    }
+    on(eventName, listener) {
+        const result = super.on(eventName, listener);
+        if (eventName === "ready" && this.readySeen) {
+            setImmediate(() => listener({ type: "ready" }));
+        }
+        return result;
     }
     bootstrap(pools) {
         this.send({ type: "bootstrap", pools });

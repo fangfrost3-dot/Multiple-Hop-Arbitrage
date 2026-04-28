@@ -1,0 +1,58 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-2c4424f43efd2f525526bed8ad3de6221de91939",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.4.0"
+  },
+  "userSourceNameMap": {
+    "contracts/adapters/UniswapV3Adapter.sol": "project/contracts/adapters/UniswapV3Adapter.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/adapters/UniswapV3Adapter.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\nimport {IDexAdapter} from \"../interfaces/IDexAdapter.sol\";\nimport {IERC20} from \"../interfaces/IERC20.sol\";\nimport {ISwapRouter} from \"../interfaces/ISwapRouter.sol\";\n\ncontract UniswapV3Adapter is IDexAdapter {\n  struct RouteData {\n    address router;\n    uint24 fee;\n    uint256 amountOutMin;\n    uint256 deadline;\n    uint160 sqrtPriceLimitX96;\n  }\n\n  function executeSwap(\n    address tokenIn,\n    address tokenOut,\n    uint256 amountIn,\n    bytes calldata routeData\n  ) external override returns (uint256 amountOut) {\n    RouteData memory route = abi.decode(routeData, (RouteData));\n\n    IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);\n    IERC20(tokenIn).approve(route.router, amountIn);\n\n    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({\n      tokenIn: tokenIn,\n      tokenOut: tokenOut,\n      fee: route.fee,\n      recipient: msg.sender,\n      deadline: route.deadline,\n      amountIn: amountIn,\n      amountOutMinimum: route.amountOutMin,\n      sqrtPriceLimitX96: route.sqrtPriceLimitX96\n    });\n\n    amountOut = ISwapRouter(route.router).exactInputSingle(params);\n  }\n}\n"
+      },
+      "project/contracts/interfaces/IDexAdapter.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IDexAdapter {\n  function executeSwap(\n    address tokenIn,\n    address tokenOut,\n    uint256 amountIn,\n    bytes calldata routeData\n  ) external returns (uint256 amountOut);\n}\n"
+      },
+      "project/contracts/interfaces/IERC20.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IERC20 {\n  function balanceOf(address account) external view returns (uint256);\n\n  function transfer(address to, uint256 value) external returns (bool);\n\n  function approve(address spender, uint256 value) external returns (bool);\n\n  function transferFrom(address from, address to, uint256 value) external returns (bool);\n}\n"
+      },
+      "project/contracts/interfaces/ISwapRouter.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface ISwapRouter {\n  struct ExactInputSingleParams {\n    address tokenIn;\n    address tokenOut;\n    uint24 fee;\n    address recipient;\n    uint256 deadline;\n    uint256 amountIn;\n    uint256 amountOutMinimum;\n    uint160 sqrtPriceLimitX96;\n  }\n\n  function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);\n}\n"
+      }
+    }
+  }
+}

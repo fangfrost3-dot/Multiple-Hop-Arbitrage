@@ -12,9 +12,9 @@ type RustMessage =
       type: "candidate";
       cycle_id: string;
       borrow_token: string;
-      borrow_amount: number;
-      gross_output: number;
-      expected_profit: number;
+      borrow_amount: string;
+      gross_output: string;
+      expected_profit: string;
       touched_pools: string[];
     }
   | { type: "log"; level: string; message: string };
@@ -22,6 +22,7 @@ type RustMessage =
 export class RustBridge extends EventEmitter {
   private readonly process: ChildProcessByStdio<Writable, Readable, null>;
   private readonly log = createLogger("rust-bridge");
+  private readySeen = false;
 
   constructor(binaryPath: string) {
     super();
@@ -32,6 +33,9 @@ export class RustBridge extends EventEmitter {
     const rl = readline.createInterface({ input: this.process.stdout });
     rl.on("line", (line) => {
       const message = JSON.parse(line) as RustMessage;
+      if (message.type === "ready") {
+        this.readySeen = true;
+      }
       if (message.type === "candidate") {
         this.emit("candidate", {
           cycle_id: message.cycle_id,
@@ -45,6 +49,14 @@ export class RustBridge extends EventEmitter {
       }
       this.emit(message.type, message);
     });
+  }
+
+  override on(eventName: string | symbol, listener: (...args: any[]) => void): this {
+    const result = super.on(eventName, listener);
+    if (eventName === "ready" && this.readySeen) {
+      setImmediate(() => listener({ type: "ready" }));
+    }
+    return result;
   }
 
   bootstrap(pools: PoolSnapshot[]): void {

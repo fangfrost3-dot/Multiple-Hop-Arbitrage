@@ -1,4 +1,6 @@
+import "dotenv/config";
 import { createServer } from "node:http";
+import { performance } from "node:perf_hooks";
 import { loadBootstrapPools } from "./bootstrap.js";
 import { loadConfig } from "./config.js";
 import { ExecutorClient } from "./executor.js";
@@ -26,11 +28,29 @@ rust.on("health", (health) => {
     log.info({ health }, "engine health");
 });
 rust.on("candidate", async (candidate) => {
+    const startedAt = performance.now();
     const profit = BigInt(candidate.expected_profit);
+    const hasRoute = executor.hasRoute(candidate.cycle_id);
+    log.info({
+        cycleId: candidate.cycle_id,
+        expectedProfit: candidate.expected_profit,
+        borrowAmount: candidate.borrow_amount,
+        touchedPools: candidate.touched_pools,
+        hasRoute,
+    }, "candidate received from rust");
     if (profit < config.MIN_EXPECTED_PROFIT) {
+        log.info({
+            cycleId: candidate.cycle_id,
+            expectedProfit: candidate.expected_profit,
+            minExpectedProfit: config.MIN_EXPECTED_PROFIT.toString(),
+        }, "candidate skipped below min expected profit gate");
         return;
     }
     await executor.handleCandidate(candidate);
+    log.info({
+        cycleId: candidate.cycle_id,
+        totalCandidateHandlingMs: Math.round((performance.now() - startedAt) * 100) / 100,
+    }, "candidate handled by control plane");
 });
 stream.on("pool_update", (update) => {
     rust.updatePool(update);

@@ -37,6 +37,10 @@ export default defineConfig({
       chainType: "l1",
       ...hardhatMainnetForking,
     },
+    hardhatArbitrum: {
+      type: "edr-simulated",
+      ...hardhatMainnetForking,
+    },
     hardhatOp: {
       type: "edr-simulated",
       chainType: "op",
@@ -46,6 +50,11 @@ export default defineConfig({
       chainType: "l1",
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    },
+    arbitrum: {
+      type: "http",
+      url: configVariable("ARBITRUM_RPC_URL"),
+      accounts: [configVariable("ARBITRUM_PRIVATE_KEY")],
     },
   },
 });

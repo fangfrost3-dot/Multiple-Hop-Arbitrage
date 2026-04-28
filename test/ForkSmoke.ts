@@ -4,10 +4,9 @@ import { network } from "hardhat";
 const describeFork = process.env.FORK_RPC_URL ? describe : describe.skip;
 
 describeFork("Fork smoke", function () {
-  it("creates a forked l1 network connection and mines a transaction", async function () {
+  it("creates a forked Arbitrum network connection and mines a transaction", async function () {
     const { ethers } = await network.create({
-      network: "hardhatMainnet",
-      chainType: "l1",
+      network: "hardhatArbitrum",
     });
 
     const provider = ethers.provider;

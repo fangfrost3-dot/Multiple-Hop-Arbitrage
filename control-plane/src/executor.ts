@@ -1,4 +1,5 @@
 import { appendFile, mkdir } from "node:fs/promises";
+import { performance } from "node:perf_hooks";
 import { dirname } from "node:path";
 import { AbiCoder, Contract, Interface, JsonRpcProvider, Wallet, type TransactionRequest } from "ethers";
 import { createLogger } from "./logger.js";
@@ -14,6 +15,54 @@ import type {
   ExecutorStatus,
   SwapRouteConfig,
 } from "./types.js";
+
+interface CachedFeeData {
+  maxFeePerGas?: bigint;
+  maxPriorityFeePerGas?: bigint;
+  gasPrice?: bigint;
+  updatedAt: number;
+}
+
+interface PreparedV2Swap {
+  kind: "v2";
+  adapter: string;
+  tokenIn: string;
+  tokenOut: string;
+  router: string;
+  path: string[];
+  amountOutMin: bigint;
+  deadlineSeconds: number;
+}
+
+interface PreparedV3Swap {
+  kind: "v3";
+  adapter: string;
+  tokenIn: string;
+  tokenOut: string;
+  router: string;
+  fee: number;
+  amountOutMin: bigint;
+  deadlineSeconds: number;
+  sqrtPriceLimitX96: bigint;
+}
+
+type PreparedSwap = PreparedV2Swap | PreparedV3Swap;
+
+interface RouteRuntimePlan {
+  cycleId: string;
+  borrowToken: string;
+  borrowTokenLower: string;
+  profitToken: string;
+  profitTokenLower: string;
+  minProfit: bigint;
+  swaps: PreparedSwap[];
+  routeHops: number;
+}
+
+interface CachedGasEstimate {
+  gasEstimate: bigint;
+  updatedAt: number;
+}
 
 class NonceCoordinator {
   private provider: JsonRpcProvider;
@@ -48,6 +97,8 @@ class NonceCoordinator {
 }
 
 export class ExecutorClient {
+  private static readonly FEE_CACHE_TTL_MS = 5_000;
+  private static readonly GAS_ESTIMATE_TTL_MS = 30_000;
   private readonly log = createLogger("executor");
   private readonly provider?: JsonRpcProvider;
   private readonly relayProvider?: JsonRpcProvider;
@@ -74,10 +125,11 @@ export class ExecutorClient {
   private readonly confirmations: number;
   private readonly replacementBumpBps: bigint;
   private readonly maxInflight: number;
-  private readonly routeByCycleId: Map<string, ExecutionRouteConfig>;
+  private readonly routeByCycleId: Map<string, RouteRuntimePlan>;
   private readonly contractInterface = new Interface(flashLoanExecutorAbi);
   private readonly abiCoder = AbiCoder.defaultAbiCoder();
   private readonly inflight = new Map<string, ExecutionRecord>();
+  private readonly gasEstimateByCycleId = new Map<string, CachedGasEstimate>();
   private readonly metrics: ExecutorMetrics = {
     submitted: 0,
     submittedPublic: 0,
@@ -94,9 +146,48 @@ export class ExecutorClient {
   private cumulativeEstimatedNetWei = 0n;
   private paused: boolean;
   private pauseReason?: string;
+  private feeDataCache?: CachedFeeData;
+  private feeRefreshPromise?: Promise<void>;
 
   constructor(config: AppConfig, routes: ExecutionRouteConfig[]) {
-    this.routeByCycleId = new Map(routes.map((route) => [route.cycleId, route]));
+    this.routeByCycleId = new Map(
+      routes.map((route) => [
+        route.cycleId,
+        {
+          cycleId: route.cycleId,
+          borrowToken: route.borrowToken,
+          borrowTokenLower: route.borrowToken.toLowerCase(),
+          profitToken: route.profitToken,
+          profitTokenLower: route.profitToken.toLowerCase(),
+          minProfit: BigInt(route.minProfit),
+          swaps: route.swaps.map((swap) =>
+            swap.kind === "v2"
+              ? {
+                  kind: "v2",
+                  adapter: swap.adapter,
+                  tokenIn: swap.tokenIn,
+                  tokenOut: swap.tokenOut,
+                  router: swap.router,
+                  path: swap.path,
+                  amountOutMin: BigInt(swap.amountOutMin),
+                  deadlineSeconds: swap.deadlineSeconds,
+                }
+              : {
+                  kind: "v3",
+                  adapter: swap.adapter,
+                  tokenIn: swap.tokenIn,
+                  tokenOut: swap.tokenOut,
+                  router: swap.router,
+                  fee: swap.fee,
+                  amountOutMin: BigInt(swap.amountOutMin),
+                  deadlineSeconds: swap.deadlineSeconds,
+                  sqrtPriceLimitX96: BigInt(swap.sqrtPriceLimitX96),
+                },
+          ),
+          routeHops: route.swaps.length,
+        },
+      ]),
+    );
     this.contractAddress = config.EXECUTOR_CONTRACT_ADDRESS;
     this.profitRecipient = config.EXECUTOR_PROFIT_RECIPIENT;
     this.submissionMode = config.EXECUTOR_SUBMISSION_MODE;
@@ -134,9 +225,19 @@ export class ExecutorClient {
       const probe = this.provider ?? this.relayProvider!;
       this.nonceCoordinator = new NonceCoordinator(probe, this.signerWallet.address);
     }
+
+    if (this.provider) {
+      void this.refreshFeeData();
+      setInterval(() => {
+        void this.refreshFeeData();
+      }, ExecutorClient.FEE_CACHE_TTL_MS).unref();
+    }
   }
 
   async handleCandidate(candidate: ExecutionCandidate): Promise<void> {
+    const startedAt = performance.now();
+    const mark = () => Math.round((performance.now() - startedAt) * 100) / 100;
+
     if (this.paused) {
       this.metrics.riskRejected += 1;
       this.log.info({ cycleId: candidate.cycle_id, pauseReason: this.pauseReason }, "candidate rejected because executor is paused");
@@ -151,12 +252,13 @@ export class ExecutorClient {
       });
       return;
     }
-    const route = this.routeByCycleId.get(candidate.cycle_id);
-    if (!route) {
+    const routePlan = this.routeByCycleId.get(candidate.cycle_id);
+    if (!routePlan) {
       this.log.debug({ cycleId: candidate.cycle_id }, "skipping candidate without route config");
       return;
     }
-    const riskReason = this.rejectReason(candidate, route);
+    const { routeHops } = routePlan;
+    const riskReason = this.rejectReason(candidate, routePlan);
     if (riskReason) {
       this.metrics.riskRejected += 1;
       this.log.info({ cycleId: candidate.cycle_id, reason: riskReason }, "candidate rejected by risk control");
@@ -168,10 +270,12 @@ export class ExecutorClient {
         borrowToken: candidate.borrow_token,
         borrowAmount: candidate.borrow_amount,
         expectedProfit: candidate.expected_profit,
-        routeHops: route.swaps.length,
+        routeHops,
       });
       return;
     }
+    const validationMs = mark();
+
     if (!this.contractAddress || !this.profitRecipient || !this.provider) {
       this.log.info({ cycleId: candidate.cycle_id }, "executor not fully configured; candidate not submitted");
       return;
@@ -180,12 +284,12 @@ export class ExecutorClient {
       this.log.info({ cycleId: candidate.cycle_id, inflight: this.inflight.size }, "skipping candidate because max inflight transactions reached");
       return;
     }
-    if (route.borrowToken.toLowerCase() !== candidate.borrow_token.toLowerCase()) {
+    if (routePlan.borrowTokenLower !== candidate.borrow_token.toLowerCase()) {
       this.log.error({ cycleId: candidate.cycle_id }, "route borrow token does not match candidate");
       return;
     }
 
-    const params = this.encodeExecutionPlan(route);
+    const params = this.encodeExecutionPlan(routePlan);
     const calldata = this.contractInterface.encodeFunctionData("requestFlashLoan", [
       candidate.borrow_token,
       BigInt(candidate.borrow_amount),
@@ -198,8 +302,9 @@ export class ExecutorClient {
       return;
     }
 
-    const gasEstimate = await this.provider.estimateGas({ to: this.contractAddress, from: estimationAddress, data: calldata });
-    const feeData = await this.provider.getFeeData();
+    const gasEstimate = await this.getGasEstimate(candidate.cycle_id, estimationAddress, calldata);
+    const feeData = await this.getCachedFeeData();
+    const rpcPrepMs = mark();
     const gasPrice = feeData.maxFeePerGas ?? feeData.gasPrice;
     if (!gasPrice) {
       this.log.error({ cycleId: candidate.cycle_id }, "missing gas price data");
@@ -213,7 +318,7 @@ export class ExecutorClient {
     }
 
     if (this.wrappedNativeToken && candidate.borrow_token.toLowerCase() === this.wrappedNativeToken) {
-      const requiredProfit = estimatedGasCostWei + BigInt(route.minProfit);
+      const requiredProfit = estimatedGasCostWei + routePlan.minProfit;
       if (BigInt(candidate.expected_profit) <= requiredProfit) {
         this.log.info(
           {
@@ -237,6 +342,7 @@ export class ExecutorClient {
     };
 
     const { tx, submissionTarget } = await this.sendTransaction(txRequest, candidate.cycle_id);
+    const submissionMs = mark();
     const execution: ExecutionRecord = {
       cycleId: candidate.cycle_id,
       txHash: tx.hash,
@@ -246,7 +352,7 @@ export class ExecutorClient {
       borrowToken: candidate.borrow_token,
       borrowAmount: candidate.borrow_amount,
       expectedProfit: candidate.expected_profit,
-      routeHops: route.swaps.length,
+      routeHops,
       gasLimit: String(txRequest.gasLimit ?? 0n),
       maxFeePerGas: txRequest.maxFeePerGas ? String(txRequest.maxFeePerGas) : undefined,
       maxPriorityFeePerGas: txRequest.maxPriorityFeePerGas ? String(txRequest.maxPriorityFeePerGas) : undefined,
@@ -261,7 +367,20 @@ export class ExecutorClient {
     }
     this.metrics.inflight = this.inflight.size;
 
-    this.log.info({ cycleId: candidate.cycle_id, hash: tx.hash, submissionTarget }, "submitted execution transaction");
+    this.log.info(
+      {
+        cycleId: candidate.cycle_id,
+        hash: tx.hash,
+        submissionTarget,
+        timingsMs: {
+          validation: validationMs,
+          rpcPrep: Math.round((rpcPrepMs - validationMs) * 100) / 100,
+          submission: Math.round((submissionMs - rpcPrepMs) * 100) / 100,
+          total: submissionMs,
+        },
+      },
+      "submitted execution transaction",
+    );
     await this.writeJournal({
       timestamp: execution.submittedAt,
       event: "submitted",
@@ -278,6 +397,10 @@ export class ExecutorClient {
         maxFeePerGas: execution.maxFeePerGas,
         maxPriorityFeePerGas: execution.maxPriorityFeePerGas,
         gasPrice: execution.gasPrice,
+        validationMs,
+        rpcPrepMs: Math.round((rpcPrepMs - validationMs) * 100) / 100,
+        submissionMs: Math.round((submissionMs - rpcPrepMs) * 100) / 100,
+        totalMs: submissionMs,
       },
     });
     void this.trackTransaction(tx.hash).catch((error: unknown) => {
@@ -285,7 +408,11 @@ export class ExecutorClient {
     });
   }
 
-  private encodeExecutionPlan(route: ExecutionRouteConfig): string {
+  hasRoute(cycleId: string): boolean {
+    return this.routeByCycleId.has(cycleId);
+  }
+
+  private encodeExecutionPlan(route: RouteRuntimePlan): string {
     const swaps = route.swaps.map((swap) => [
       swap.adapter,
       swap.tokenIn,
@@ -297,23 +424,85 @@ export class ExecutorClient {
       [
         "tuple(address profitToken,uint256 minProfit,address profitRecipient,tuple(address adapter,address tokenIn,address tokenOut,bytes routeData)[] swaps)",
       ],
-      [[route.profitToken, BigInt(route.minProfit), this.profitRecipient, swaps]],
+      [[route.profitToken, route.minProfit, this.profitRecipient, swaps]],
     );
   }
 
-  private encodeRouteData(swap: SwapRouteConfig): string {
+  private encodeRouteData(swap: PreparedSwap): string {
     const deadline = BigInt(Math.floor(Date.now() / 1000) + swap.deadlineSeconds);
     if (swap.kind === "v2") {
       return this.abiCoder.encode(
         ["tuple(address router,address[] path,uint256 amountOutMin,uint256 deadline)"],
-        [[swap.router, swap.path, BigInt(swap.amountOutMin), deadline]],
+        [[swap.router, swap.path, swap.amountOutMin, deadline]],
       );
     }
 
     return this.abiCoder.encode(
       ["tuple(address router,uint24 fee,uint256 amountOutMin,uint256 deadline,uint160 sqrtPriceLimitX96)"],
-      [[swap.router, swap.fee, BigInt(swap.amountOutMin), deadline, BigInt(swap.sqrtPriceLimitX96)]],
+      [[swap.router, swap.fee, swap.amountOutMin, deadline, swap.sqrtPriceLimitX96]],
     );
+  }
+
+  private async getGasEstimate(cycleId: string, from: string, calldata: string): Promise<bigint> {
+    const now = Date.now();
+    const cached = this.gasEstimateByCycleId.get(cycleId);
+    if (cached && now - cached.updatedAt <= ExecutorClient.GAS_ESTIMATE_TTL_MS) {
+      return cached.gasEstimate;
+    }
+
+    if (!this.provider || !this.contractAddress) {
+      throw new Error("provider or contract address missing for gas estimation");
+    }
+
+    const gasEstimate = await this.provider.estimateGas({
+      to: this.contractAddress,
+      from,
+      data: calldata,
+    });
+    this.gasEstimateByCycleId.set(cycleId, { gasEstimate, updatedAt: now });
+    return gasEstimate;
+  }
+
+  private async getCachedFeeData(): Promise<CachedFeeData> {
+    const now = Date.now();
+    if (this.feeDataCache && now - this.feeDataCache.updatedAt <= ExecutorClient.FEE_CACHE_TTL_MS) {
+      return this.feeDataCache;
+    }
+
+    await this.refreshFeeData();
+    if (!this.feeDataCache) {
+      throw new Error("fee data unavailable");
+    }
+
+    return this.feeDataCache;
+  }
+
+  private async refreshFeeData(): Promise<void> {
+    if (!this.provider) {
+      return;
+    }
+    if (this.feeRefreshPromise) {
+      return this.feeRefreshPromise;
+    }
+
+    this.feeRefreshPromise = this.provider
+      .getFeeData()
+      .then((feeData) => {
+        this.feeDataCache = {
+          maxFeePerGas: feeData.maxFeePerGas ?? undefined,
+          maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
+          gasPrice: feeData.gasPrice ?? undefined,
+          updatedAt: Date.now(),
+        };
+      })
+      .catch((error: unknown) => {
+        this.log.error({ error }, "fee data refresh failed");
+      })
+      .finally(() => {
+        this.feeRefreshPromise = undefined;
+      });
+
+    await this.feeRefreshPromise;
   }
 
   private async trackTransaction(hash: string): Promise<void> {
@@ -574,12 +763,12 @@ export class ExecutorClient {
     throw new Error("no available submission path for executor");
   }
 
-  private rejectReason(candidate: ExecutionCandidate, route: ExecutionRouteConfig): string | undefined {
+  private rejectReason(candidate: ExecutionCandidate, route: RouteRuntimePlan): string | undefined {
     if (this.allowedBorrowTokens && !this.allowedBorrowTokens.has(candidate.borrow_token.toLowerCase())) {
       return "borrow token not allowlisted";
     }
 
-    if (this.allowedProfitTokens && !this.allowedProfitTokens.has(route.profitToken.toLowerCase())) {
+    if (this.allowedProfitTokens && !this.allowedProfitTokens.has(route.profitTokenLower)) {
       return "profit token not allowlisted";
     }
 
