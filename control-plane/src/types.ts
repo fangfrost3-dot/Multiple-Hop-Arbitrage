@@ -3,6 +3,8 @@ export interface PoolSnapshot {
   dex: string;
   pool_kind: "xyk" | "stable";
   amp_factor?: number;
+  sqrt_price_x96?: string;
+  liquidity?: string;
   token_in: string;
   token_out: string;
   reserve_in: string;
@@ -15,6 +17,9 @@ export interface PoolUpdate {
   reserve_in: string;
   reserve_out: string;
   block_number: number;
+  log_index?: number;
+  sqrt_price_x96?: string;
+  liquidity?: string;
   source?: "live" | "recovery" | "reconnect_recovery";
   replay_from_block?: number;
   replay_to_block?: number;
@@ -34,10 +39,15 @@ export interface ExecutionRecord {
   txHash: string;
   nonce: number;
   submittedAt: number;
+  lastBroadcastAt: number;
+  replacementCount: number;
   submissionTarget: "public" | "relay";
   borrowToken: string;
   borrowAmount: string;
   expectedProfit: string;
+  profitToken: string;
+  profitRecipient: string;
+  profitRecipientBalanceBefore?: string;
   routeHops: number;
   gasLimit: string;
   maxFeePerGas?: string;
@@ -74,6 +84,7 @@ export interface ExecutionOutcomeEntry {
   gasUsed?: string;
   txCostWei?: string;
   estimatedNetProfitWei?: string;
+  realizedProfitTokenDelta?: string;
   cumulativeEstimatedNetWei?: string;
 }
 
@@ -166,7 +177,25 @@ export interface V3RouteConfig {
   sqrtPriceLimitX96: string;
 }
 
-export type SwapRouteConfig = V2RouteConfig | V3RouteConfig;
+export interface OneInchRouteConfig {
+  kind: "one_inch";
+  adapter: string;
+  tokenIn: string;
+  tokenOut: string;
+  router: string;
+  chainId: number;
+  slippageBps: number;
+  protocols?: string[];
+  referrerAddress?: string;
+  complexityLevel?: number;
+  disableEstimate?: boolean;
+  allowPartialFill?: boolean;
+  includeTokensInfo?: boolean;
+  includeProtocols?: boolean;
+  includeGas?: boolean;
+}
+
+export type SwapRouteConfig = V2RouteConfig | V3RouteConfig | OneInchRouteConfig;
 
 export interface ExecutionRouteConfig {
   cycleId: string;

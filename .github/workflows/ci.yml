@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Check lockfiles
+        run: |
+          if [ ! -f package-lock.json ]; then echo "Missing package-lock.json"; exit 1; fi
+          if [ ! -f control-plane/package-lock.json ]; then echo "Missing control-plane/package-lock.json"; exit 1; fi
+
+      - name: Install root dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install control-plane dependencies
+        run: npm ci --prefix control-plane
+
+      - name: Build control-plane (TypeScript)
+        run: npm --prefix control-plane run build
+
+      - name: Rust build
+        run: cargo build --manifest-path rust-core/Cargo.toml
+
+      - name: Rust tests
+        run: cargo test --manifest-path rust-core/Cargo.toml
+
+      - name: Run Solidity contract tests
+        run: npm run test:contracts
+
+      - name: Run npm audit (root production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+  integration:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run forked-mainnet integration tests
+        env:
+          RPC_URL: ${{ secrets.RPC_URL }}
+          FORK_RPC_URL: ${{ secrets.FORK_RPC_URL || secrets.RPC_URL }}
+        run: npm run test:fork
+
+  security:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install root dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run npm audit (root production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Install control-plane dependencies
+        run: npm ci --prefix control-plane
+
+      - name: Run npm audit (control-plane)
+        run: npm audit --prefix control-plane --audit-level=high
+
+      - name: Install cargo-audit
+        run: |
+          cargo install cargo-audit || true
+
+      - name: Run cargo-audit (rust-core)
+        run: cargo audit --manifest-path rust-core/Cargo.toml || true
+
+      - name: CodeQL - init
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript,rust
+
+      - name: CodeQL - autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: CodeQL - analyze
+        uses: github/codeql-action/analyze@v2

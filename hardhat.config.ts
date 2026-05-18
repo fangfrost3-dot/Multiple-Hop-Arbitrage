@@ -1,5 +1,17 @@
+import "dotenv/config";
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable, defineConfig } from "hardhat/config";
+
+const hardhatMainnetForking = process.env.FORK_RPC_URL
+  ? {
+      forking: {
+        url: process.env.FORK_RPC_URL,
+        ...(process.env.FORK_BLOCK_NUMBER
+          ? { blockNumber: Number(process.env.FORK_BLOCK_NUMBER) }
+          : {}),
+      },
+    }
+  : {};
 
 export default defineConfig({
   plugins: [hardhatToolboxMochaEthersPlugin],
@@ -23,6 +35,11 @@ export default defineConfig({
     hardhatMainnet: {
       type: "edr-simulated",
       chainType: "l1",
+      ...hardhatMainnetForking,
+    },
+    hardhatArbitrum: {
+      type: "edr-simulated",
+      ...hardhatMainnetForking,
     },
     hardhatOp: {
       type: "edr-simulated",
@@ -33,6 +50,11 @@ export default defineConfig({
       chainType: "l1",
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    },
+    arbitrum: {
+      type: "http",
+      url: configVariable("ARBITRUM_RPC_URL"),
+      accounts: [configVariable("ARBITRUM_PRIVATE_KEY")],
     },
   },
 });

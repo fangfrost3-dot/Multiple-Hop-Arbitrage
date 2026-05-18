@@ -11,6 +11,7 @@ contract FlashLoanExecutor is IFlashLoanSimpleReceiver {
   error InvalidLender();
   error InvalidInitiator();
   error InvalidRoute();
+  error InvalidProfitToken();
   error InsufficientProfit(uint256 finalBalance, uint256 minReturn);
 
   struct SwapInstruction {
@@ -68,7 +69,11 @@ contract FlashLoanExecutor is IFlashLoanSimpleReceiver {
     if (plan.swaps.length == 0) {
       revert InvalidRoute();
     }
+    if (plan.profitToken != asset) {
+      revert InvalidProfitToken();
+    }
 
+    uint256 startingBalance = IERC20(asset).balanceOf(address(this));
     uint256 currentAmount = amount;
     for (uint256 i = 0; i < plan.swaps.length; i++) {
       SwapInstruction memory instruction = plan.swaps[i];
@@ -83,14 +88,14 @@ contract FlashLoanExecutor is IFlashLoanSimpleReceiver {
 
     uint256 amountOwed = amount + premium;
     uint256 finalBalance = IERC20(asset).balanceOf(address(this));
-    uint256 minReturn = amountOwed + plan.minProfit;
+    uint256 minReturn = startingBalance + premium + plan.minProfit;
     if (finalBalance < minReturn) {
       revert InsufficientProfit(finalBalance, minReturn);
     }
 
     IERC20(asset).approve(address(lender), amountOwed);
 
-    uint256 profit = finalBalance - amountOwed;
+    uint256 profit = finalBalance - startingBalance - premium;
     if (profit > 0) {
       IERC20(plan.profitToken).transfer(plan.profitRecipient, profit);
     }

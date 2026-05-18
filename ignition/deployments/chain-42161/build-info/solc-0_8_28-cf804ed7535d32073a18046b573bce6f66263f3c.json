@@ -1,0 +1,61 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-cf804ed7535d32073a18046b573bce6f66263f3c",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.4.0"
+  },
+  "userSourceNameMap": {
+    "contracts/FlashLoanExecutor.sol": "project/contracts/FlashLoanExecutor.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/FlashLoanExecutor.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\nimport {IDexAdapter} from \"./interfaces/IDexAdapter.sol\";\nimport {IERC20} from \"./interfaces/IERC20.sol\";\nimport {IFlashLoanSimpleReceiver} from \"./interfaces/IFlashLoanSimpleReceiver.sol\";\nimport {IPool} from \"./interfaces/IPool.sol\";\n\ncontract FlashLoanExecutor is IFlashLoanSimpleReceiver {\n  error NotOwner();\n  error InvalidLender();\n  error InvalidInitiator();\n  error InvalidRoute();\n  error InsufficientProfit(uint256 finalBalance, uint256 minReturn);\n\n  struct SwapInstruction {\n    address adapter;\n    address tokenIn;\n    address tokenOut;\n    bytes routeData;\n  }\n\n  struct ExecutionPlan {\n    address profitToken;\n    uint256 minProfit;\n    address profitRecipient;\n    SwapInstruction[] swaps;\n  }\n\n  address public immutable owner;\n  IPool public immutable lender;\n\n  event FlashLoanRequested(address indexed asset, uint256 amount);\n  event ArbitrageExecuted(address indexed asset, uint256 amountBorrowed, uint256 amountRepaid, uint256 profit);\n\n  constructor(address lenderAddress) {\n    owner = msg.sender;\n    lender = IPool(lenderAddress);\n  }\n\n  modifier onlyOwner() {\n    if (msg.sender != owner) {\n      revert NotOwner();\n    }\n    _;\n  }\n\n  function requestFlashLoan(address asset, uint256 amount, bytes calldata params) external onlyOwner {\n    emit FlashLoanRequested(asset, amount);\n    lender.flashLoanSimple(address(this), asset, amount, params, 0);\n  }\n\n  function executeOperation(\n    address asset,\n    uint256 amount,\n    uint256 premium,\n    address initiator,\n    bytes calldata params\n  ) external override returns (bool) {\n    if (msg.sender != address(lender)) {\n      revert InvalidLender();\n    }\n    if (initiator != address(this)) {\n      revert InvalidInitiator();\n    }\n\n    ExecutionPlan memory plan = abi.decode(params, (ExecutionPlan));\n    if (plan.swaps.length == 0) {\n      revert InvalidRoute();\n    }\n\n    uint256 currentAmount = amount;\n    for (uint256 i = 0; i < plan.swaps.length; i++) {\n      SwapInstruction memory instruction = plan.swaps[i];\n      IERC20(instruction.tokenIn).approve(instruction.adapter, currentAmount);\n      currentAmount = IDexAdapter(instruction.adapter).executeSwap(\n        instruction.tokenIn,\n        instruction.tokenOut,\n        currentAmount,\n        instruction.routeData\n      );\n    }\n\n    uint256 amountOwed = amount + premium;\n    uint256 finalBalance = IERC20(asset).balanceOf(address(this));\n    uint256 minReturn = amountOwed + plan.minProfit;\n    if (finalBalance < minReturn) {\n      revert InsufficientProfit(finalBalance, minReturn);\n    }\n\n    IERC20(asset).approve(address(lender), amountOwed);\n\n    uint256 profit = finalBalance - amountOwed;\n    if (profit > 0) {\n      IERC20(plan.profitToken).transfer(plan.profitRecipient, profit);\n    }\n\n    emit ArbitrageExecuted(asset, amount, amountOwed, profit);\n    return true;\n  }\n}\n"
+      },
+      "project/contracts/interfaces/IDexAdapter.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IDexAdapter {\n  function executeSwap(\n    address tokenIn,\n    address tokenOut,\n    uint256 amountIn,\n    bytes calldata routeData\n  ) external returns (uint256 amountOut);\n}\n"
+      },
+      "project/contracts/interfaces/IERC20.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IERC20 {\n  function balanceOf(address account) external view returns (uint256);\n\n  function transfer(address to, uint256 value) external returns (bool);\n\n  function approve(address spender, uint256 value) external returns (bool);\n\n  function transferFrom(address from, address to, uint256 value) external returns (bool);\n}\n"
+      },
+      "project/contracts/interfaces/IFlashLoanSimpleReceiver.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IFlashLoanSimpleReceiver {\n  function executeOperation(\n    address asset,\n    uint256 amount,\n    uint256 premium,\n    address initiator,\n    bytes calldata params\n  ) external returns (bool);\n}\n"
+      },
+      "project/contracts/interfaces/IPool.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IPool {\n  function flashLoanSimple(\n    address receiverAddress,\n    address asset,\n    uint256 amount,\n    bytes calldata params,\n    uint16 referralCode\n  ) external;\n}\n"
+      }
+    }
+  }
+}

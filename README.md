@@ -13,7 +13,9 @@ Current supported execution/bootstrap shape:
 - optional `v2_factory` discovery that expands token sets into discovered pair addresses
 - optional Multicall3 batching for pair discovery and reserve bootstrap
 - websocket-backed V2 `Sync` ingestion for incremental reevaluation
+- Bellman-Ford-based opportunity discovery on directly monitored pool updates
 - route-config-driven executor submission through the flash-loan contract
+- dynamic 1inch Classic Swap route construction for configured execution hops
 
 ## Architecture
 
@@ -26,7 +28,7 @@ The intended responsibility split is strict:
 Current scaffolded flow:
 
 1. Node bootstraps pool snapshots and forwards incremental updates to the Rust process over stdio.
-2. Rust maintains pool state in memory, prebuilds arbitrage cycles, and reevaluates only cycles touched by an updated pool.
+2. Rust maintains pool state in memory, monitors direct pool updates, runs Bellman-Ford over the live token graph around the touched pool, and simulates the resulting candidate cycles.
 3. Rust emits profitable candidates back to Node.
 4. Node decides whether to encode and submit a flash-loan execution transaction.
 
@@ -49,6 +51,7 @@ npm run build:contracts
 npm run test:contracts
 npm run build:rust
 npm run run:rust
+npm run bench:rust
 npm run build:control-plane
 npm run run:control-plane
 ```
@@ -66,9 +69,22 @@ Environment variables:
 - `POOL_CONFIG_PATH`: JSON file listing configured pools
 - `ROUTE_CONFIG_PATH`: JSON file mapping cycle ids to executable swap routes
 - `METRICS_PORT`: HTTP port exposing `/healthz`, `/status`, `/metrics`, and `/resume`
+- `ONE_INCH_API_KEY`: bearer token for 1inch Classic Swap API access
+- `ONE_INCH_API_BASE_URL`: optional override for the 1inch API host, default `https://api.1inch.dev`
+- `CANDIDATE_NOTIFICATION_WEBHOOK_URL`: optional webhook that receives JSON when a candidate is found
+- `TELEGRAM_BOT_TOKEN`: optional Telegram bot token for direct candidate alerts
+- `TELEGRAM_CHAT_ID`: target Telegram chat id for direct candidate alerts
+- `TELEGRAM_MESSAGE_THREAD_ID`: optional Telegram topic id for forum-style chats
+- `CANDIDATE_NOTIFICATION_MIN_EXPECTED_PROFIT`: optional minimum candidate profit required before a notification is sent
+- `CANDIDATE_NOTIFICATION_COOLDOWN_MS`: optional per-cycle cooldown to suppress duplicate notifications
+- `CANDIDATE_NOTIFICATION_TIMEOUT_MS`: webhook timeout in milliseconds
+- `RPC_MONITOR_INTERVAL_MS`: interval for public/relay RPC latency probes
+- `RPC_MONITOR_TIMEOUT_MS`: timeout for each RPC latency probe
 - `STREAM_MAX_BLOCK_GAP`: block-gap threshold before the control plane flags replay/recovery need
 - `MIN_EXPECTED_PROFIT`: candidate filter threshold before executor submission
-- `EXECUTOR_PRIVATE_KEY`: signer used for sending execution transactions
+- `EXECUTOR_PRIVATE_KEY`: signer used for sending execution transactions when inline keys are explicitly allowed
+- `EXECUTOR_PRIVATE_KEY_PATH`: preferred path to a file containing the executor private key
+- `EXECUTOR_ALLOW_INLINE_PRIVATE_KEY`: opt-in escape hatch for inline private keys; default `false`
 - `EXECUTOR_CONTRACT_ADDRESS`: deployed `FlashLoanExecutor` address
 - `EXECUTOR_PROFIT_RECIPIENT`: address that receives realized profits
 - `EXECUTOR_JOURNAL_PATH`: append-only JSONL journal for submissions, replacements, confirmations, and risk rejections
@@ -80,6 +96,7 @@ Environment variables:
 - `EXECUTOR_ALLOWED_ROUTE_KINDS`: optional comma-separated route kind allowlist such as `v2` or `v3`
 - `EXECUTOR_MAX_BORROW_AMOUNT`: hard ceiling for candidate borrow size
 - `EXECUTOR_MAX_ROUTE_HOPS`: hard ceiling for swap count per route
+- `EXECUTOR_MIN_PROFIT_REALIZATION_BPS`: minimum share of simulated profit that must still be realized on-chain after slippage
 - `EXECUTOR_START_PAUSED`: boot the executor in a paused state
 - `EXECUTOR_MAX_CONSECUTIVE_FAILURES`: auto-pause threshold for back-to-back failed txs
 - `EXECUTOR_MAX_TOTAL_FAILURES`: auto-pause threshold for cumulative failed txs
@@ -88,7 +105,10 @@ Environment variables:
 - `MAX_GAS_COST_WEI`: hard upper bound on estimated tx gas cost
 - `EXECUTOR_CONFIRMATIONS`: confirmations required before a tx is considered final
 - `EXECUTOR_REPLACEMENT_BUMP_BPS`: fee bump used for rebroadcasting stuck transactions
+- `EXECUTOR_STUCK_TX_TIMEOUT_MS`: minimum age before a pending tx is considered stuck and eligible for replacement
+- `EXECUTOR_MAX_REPLACEMENTS`: maximum replacement attempts before the executor pauses
 - `EXECUTOR_MAX_INFLIGHT`: cap on concurrent pending execution txs
+- `EXECUTOR_KILL_SWITCH_PATH`: optional filesystem kill-switch file path; if present the executor pauses automatically
 
 The current bootstrap loader supports `v2` pools with:
 
@@ -109,9 +129,11 @@ Live ingestion currently supports:
 - websocket subscriptions to V2 `Sync` events
 - pair-to-oriented-pool fanout for forward and reverse edges
 - block-gap replay for missed V2 `Sync` logs with reserve-recovery fallback
+- monotonic replay ordering using per-log indexes for deterministic same-block updates
 - websocket reconnect and resubscription for V2 pools
 - block-driven polling for configured two-coin stable pools
 - block-driven polling for configured V3 pools using approximate reserve reconstruction
+- optional webhook notifications when Rust emits a candidate
 
 It does not yet include venue-perfect stable event decoding or tick-accurate V3 liquidity reconstruction.
 
@@ -120,18 +142,43 @@ Execution submission currently supports:
 - route lookup by `cycleId`
 - ABI encoding of executor plans
 - dynamic route-data encoding for V2 and V3 adapters
-- gas estimation and simple cost/profit gating
+- dynamic 1inch swap calldata generation using configured adapter/router pairs
+- gas estimation and explicit gas-cost risk rejection
+- slippage-adjusted minimum-profit enforcement on execution plans
 - signer-backed transaction submission with nonce management
 - pending-tx rebroadcast with configurable fee bumps
+- bounded stuck-tx replacement with pause-on-exhaustion behavior
 - append-only execution journaling
-- append-only outcome ledger with receipt-derived tx costs and estimated net profit for wrapped-native routes
+- append-only outcome ledger with receipt-derived tx costs, estimated net profit, and realized profit-token deltas
 - pre-submit risk gates for borrow-token allowlists, borrow size, and route hop count
 - route-policy gates for profit tokens, adapters, routers, and route kinds
 - executor circuit breaker with auto-pause on repeated failed transactions
 - relay-aware execution submission with public-RPC fallback when configured
+- manual `/pause` control plus optional filesystem kill switch
+- public and relay RPC latency monitoring in `/status`, `/healthz`, and `/metrics`
 - HTTP status and Prometheus-style metrics endpoints
 
 It does not yet include token-accurate realized PnL across arbitrary profit assets, venue-specific private relay integration, or advanced circuit breakers.
+
+For `one_inch` routes, configure the deployed 1inch adapter address as `adapter`, the chain router/spender as `router`, and set `chainId` plus `slippageBps`. At submission time the executor calls the 1inch Classic Swap API, requests calldata with `from=<adapter>` and `receiver=<FlashLoanExecutor>`, validates that the returned `tx.to` matches the configured router, and passes the calldata into the adapter for execution.
+
+## Throughput Benchmark
+
+Run `npm run bench:rust` to measure the local Rust hot path under a synthetic shared-pool topology.
+
+Optional environment variables:
+
+- `BENCH_CYCLE_COUNT`: number of synthetic triangular cycles, default `2000`
+- `BENCH_ITERATIONS`: number of full-cycle simulation passes, default `200`
+- `BENCH_UPDATES`: number of shared-pool updates to replay through the update path, default `5000`
+
+The benchmark reports:
+
+- `opportunities_per_second`: cycle simulations per second in the Rust evaluator
+- `updates_per_second`: hot-path pool updates applied per second
+- `candidate_emits_per_second`: profitable candidate emissions per second in that synthetic topology
+
+This benchmark measures local CPU throughput only. It does not include websocket ingress latency, RPC round trips, 1inch API latency, or on-chain submission/finality.
 
 ## Production Gaps
 

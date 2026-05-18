@@ -1,8 +1,9 @@
 import { EventEmitter } from "node:events";
 import { Contract, Interface, JsonRpcProvider, WebSocketProvider } from "ethers";
-import { curveTwoCoinPoolAbi, uniswapV2PairAbi, uniswapV3PoolAbi } from "./abis.js";
+import { curveTwoCoinPoolAbi, multicall3Abi, uniswapV2PairAbi, uniswapV3PoolAbi } from "./abis.js";
 import { expandV2Pools, filterStablePools } from "./discovery.js";
 import type { AppConfig } from "./config.js";
+import type { CuMeter } from "./cuMeter.js";
 import { createLogger } from "./logger.js";
 import type { PoolConfig, PoolUpdate, StablePoolConfig, V2PoolConfig, V3PoolConfig } from "./types.js";
 
@@ -28,9 +29,17 @@ interface V3Subscription {
   handler: "uniswap_v3";
 }
 
+interface BatchCall {
+  target: string;
+  iface: Interface;
+  fn: string;
+  args: unknown[];
+}
+
 export class PoolStream extends EventEmitter {
   private readonly config: AppConfig;
   private readonly pools: PoolConfig[];
+  private readonly cuMeter?: CuMeter;
   private readonly log = createLogger("pool-stream");
   private provider?: WebSocketProvider;
   private recoveryProvider?: JsonRpcProvider;
@@ -46,13 +55,16 @@ export class PoolStream extends EventEmitter {
   private lastStableReserves = new Map<string, { reserveIn: string; reserveOut: string }>();
   private lastV3Reserves = new Map<string, { reserveIn: string; reserveOut: string }>();
   private reconnectTimer?: NodeJS.Timeout;
+  private stablePollTimer?: NodeJS.Timeout;
+  private v3PollTimer?: NodeJS.Timeout;
   private reconnecting = false;
   private closed = false;
 
-  constructor(config: AppConfig, pools: PoolConfig[]) {
+  constructor(config: AppConfig, pools: PoolConfig[], cuMeter?: CuMeter) {
     super();
     this.config = config;
     this.pools = pools;
+    this.cuMeter = cuMeter;
   }
 
   async connect(): Promise<void> {
@@ -66,7 +78,7 @@ export class PoolStream extends EventEmitter {
     }
 
     this.recoveryProvider = new JsonRpcProvider(this.config.RPC_URL);
-    this.expandedV2Pools = await expandV2Pools(this.recoveryProvider, this.config.MULTICALL3_ADDRESS, this.pools);
+    this.expandedV2Pools = await expandV2Pools(this.recoveryProvider, this.config.MULTICALL3_ADDRESS, this.pools, this.cuMeter);
     this.stablePools = filterStablePools(this.pools);
     this.v3Pools = this.pools.filter((pool): pool is V3PoolConfig => pool.kind === "v3");
 
@@ -83,6 +95,14 @@ export class PoolStream extends EventEmitter {
       this.provider.removeAllListeners();
       await this.provider.destroy();
       this.provider = undefined;
+    }
+    if (this.stablePollTimer) {
+      clearInterval(this.stablePollTimer);
+      this.stablePollTimer = undefined;
+    }
+    if (this.v3PollTimer) {
+      clearInterval(this.v3PollTimer);
+      this.v3PollTimer = undefined;
     }
     this.recoveryProvider = undefined;
   }
@@ -176,6 +196,7 @@ export class PoolStream extends EventEmitter {
     for (const [pair, group] of pairGroups) {
       const contract = new Contract(pair, uniswapV2PairAbi, this.provider);
       const token0 = String(await contract.token0()).toLowerCase();
+      this.cuMeter?.recordMethod("eth_call");
       this.subscriptions.set(pair, {
         token0,
         orientations: group.map((pool) => ({
@@ -185,11 +206,13 @@ export class PoolStream extends EventEmitter {
       });
 
       this.provider.on({ address: pair, topics: [syncTopic] }, (log) => {
+        this.cuMeter?.recordWebSocketPayload(log);
         const decoded = this.syncInterface.decodeEventLog("Sync", log.data, log.topics);
         const reserve0 = BigInt(String(decoded.reserve0));
         const reserve1 = BigInt(String(decoded.reserve1));
-        this.handleSync(pair, reserve0, reserve1, log.blockNumber);
+        this.handleSync(pair, reserve0, reserve1, log.blockNumber, Number(log.index));
       });
+      this.cuMeter?.recordMethod("eth_subscribe");
     }
 
     this.log.info({ subscriptions: pairGroups.size }, "attached live v2 sync listeners");
@@ -214,12 +237,21 @@ export class PoolStream extends EventEmitter {
       return;
     }
 
-    this.provider.on("block", (blockNumber) => {
-      void this.pollStablePools(blockNumber, this.reconnecting ? "reconnect_recovery" : "live");
-    });
+    const blockNumber = await this.recoveryProvider.getBlockNumber();
+    this.cuMeter?.recordMethod("eth_blockNumber");
+    await this.pollStablePoolsBatched(blockNumber, this.reconnecting ? "reconnect_recovery" : "recovery");
+    if (this.config.STABLE_POLL_INTERVAL_MS > 0) {
+      this.stablePollTimer = setInterval(() => {
+        void this.pollStablePoolsFromHead(this.reconnecting ? "reconnect_recovery" : "live");
+      }, this.config.STABLE_POLL_INTERVAL_MS);
+      this.log.info(
+        { stableSubscriptions: this.stableSubscriptions.length, intervalMs: this.config.STABLE_POLL_INTERVAL_MS },
+        "attached stable pool polling handlers",
+      );
+      return;
+    }
 
-    await this.pollStablePools(await this.recoveryProvider.getBlockNumber(), this.reconnecting ? "reconnect_recovery" : "recovery");
-    this.log.info({ stableSubscriptions: this.stableSubscriptions.length }, "attached stable pool live handlers");
+    this.log.info({ stableSubscriptions: this.stableSubscriptions.length }, "stable pool polling disabled after recovery snapshot");
   }
 
   private async attachV3Handlers(pools: V3PoolConfig[]): Promise<void> {
@@ -239,15 +271,24 @@ export class PoolStream extends EventEmitter {
       return;
     }
 
-    this.provider.on("block", (blockNumber) => {
-      void this.pollV3Pools(blockNumber, this.reconnecting ? "reconnect_recovery" : "live");
-    });
+    const blockNumber = await this.recoveryProvider.getBlockNumber();
+    this.cuMeter?.recordMethod("eth_blockNumber");
+    await this.pollV3Pools(blockNumber, this.reconnecting ? "reconnect_recovery" : "recovery");
+    if (this.config.V3_POLL_INTERVAL_MS > 0) {
+      this.v3PollTimer = setInterval(() => {
+        void this.pollV3PoolsFromHead(this.reconnecting ? "reconnect_recovery" : "live");
+      }, this.config.V3_POLL_INTERVAL_MS);
+      this.log.info(
+        { v3Subscriptions: this.v3Subscriptions.length, intervalMs: this.config.V3_POLL_INTERVAL_MS },
+        "attached v3 pool polling handlers",
+      );
+      return;
+    }
 
-    await this.pollV3Pools(await this.recoveryProvider.getBlockNumber(), this.reconnecting ? "reconnect_recovery" : "recovery");
-    this.log.info({ v3Subscriptions: this.v3Subscriptions.length }, "attached v3 pool live handlers");
+    this.log.info({ v3Subscriptions: this.v3Subscriptions.length }, "v3 pool polling disabled after recovery snapshot");
   }
 
-  private handleSync(pair: string, reserve0: bigint, reserve1: bigint, blockNumber: number): void {
+  private handleSync(pair: string, reserve0: bigint, reserve1: bigint, blockNumber: number, logIndex: number): void {
     const subscription = this.subscriptions.get(pair.toLowerCase());
     if (!subscription) {
       return;
@@ -270,6 +311,7 @@ export class PoolStream extends EventEmitter {
         reserve_in: (tokenInIsToken0 ? reserve0 : reserve1).toString(),
         reserve_out: (tokenInIsToken0 ? reserve1 : reserve0).toString(),
         block_number: blockNumber,
+        log_index: logIndex,
         source: "live",
       };
       this.emit("pool_update", update);
@@ -304,6 +346,8 @@ export class PoolStream extends EventEmitter {
     try {
       const contract = new Contract(pair, uniswapV2PairAbi, this.recoveryProvider);
       const [reserves, blockNumber] = await Promise.all([contract.getReserves(), this.recoveryProvider.getBlockNumber()]);
+      this.cuMeter?.recordMethod("eth_call");
+      this.cuMeter?.recordMethod("eth_blockNumber");
       const reserve0 = BigInt(String(reserves.reserve0));
       const reserve1 = BigInt(String(reserves.reserve1));
 
@@ -316,6 +360,7 @@ export class PoolStream extends EventEmitter {
           reserve_in: (tokenInIsToken0 ? reserve0 : reserve1).toString(),
           reserve_out: (tokenInIsToken0 ? reserve1 : reserve0).toString(),
           block_number: blockNumber,
+          log_index: Number.MAX_SAFE_INTEGER,
           source: this.reconnecting ? "reconnect_recovery" : "recovery",
           replay_from_block: previousBlock !== undefined ? previousBlock + 1 : blockNumber,
           replay_to_block: blockNumber,
@@ -353,6 +398,7 @@ export class PoolStream extends EventEmitter {
         fromBlock,
         toBlock,
       });
+      this.cuMeter?.recordMethod("eth_getLogs");
 
       if (logs.length === 0) {
         await this.recoverPair(pair);
@@ -370,7 +416,7 @@ export class PoolStream extends EventEmitter {
         const decoded = this.syncInterface.decodeEventLog("Sync", log.data, log.topics);
         const reserve0 = BigInt(String(decoded.reserve0));
         const reserve1 = BigInt(String(decoded.reserve1));
-        this.emitReplayUpdate(subscription, reserve0, reserve1, log.blockNumber, fromBlock, toBlock);
+        this.emitReplayUpdate(subscription, reserve0, reserve1, log.blockNumber, Number(log.index), fromBlock, toBlock);
         this.lastSeenBlock.set(pairKey, log.blockNumber);
       }
 
@@ -388,6 +434,7 @@ export class PoolStream extends EventEmitter {
     reserve0: bigint,
     reserve1: bigint,
     blockNumber: number,
+    logIndex: number,
     fromBlock: number,
     toBlock: number,
   ): void {
@@ -398,6 +445,7 @@ export class PoolStream extends EventEmitter {
         reserve_in: (tokenInIsToken0 ? reserve0 : reserve1).toString(),
         reserve_out: (tokenInIsToken0 ? reserve1 : reserve0).toString(),
         block_number: blockNumber,
+        log_index: logIndex,
         source: this.reconnecting ? "reconnect_recovery" : "recovery",
         replay_from_block: fromBlock,
         replay_to_block: toBlock,
@@ -436,16 +484,81 @@ export class PoolStream extends EventEmitter {
           const update: PoolUpdate = {
             pool_id: subscription.poolId,
             reserve_in: next.reserveIn,
-            reserve_out: next.reserveOut,
-            block_number: blockNumber,
-            source,
-          };
+          reserve_out: next.reserveOut,
+          block_number: blockNumber,
+          log_index: Number.MAX_SAFE_INTEGER,
+          sqrt_price_x96: undefined,
+          liquidity: undefined,
+          source,
+        };
           this.emit("pool_update", update);
         } catch (error) {
           this.log.error({ poolId: subscription.poolId, error }, "stable pool polling failed");
         }
       }),
     );
+  }
+
+  private async pollStablePoolsBatched(
+    blockNumber: number,
+    source: NonNullable<PoolUpdate["source"]>,
+  ): Promise<void> {
+    if (!this.recoveryProvider || this.stableSubscriptions.length === 0) {
+      return;
+    }
+
+    const curveInterface = new Interface(curveTwoCoinPoolAbi);
+    const calls: BatchCall[] = this.stableSubscriptions.flatMap((subscription) => [
+      { target: subscription.poolAddress, iface: curveInterface, fn: "balances", args: [0] },
+      { target: subscription.poolAddress, iface: curveInterface, fn: "balances", args: [1] },
+    ]);
+
+    const results = await this.batchRead(calls);
+    this.stableSubscriptions.forEach((subscription, index) => {
+      const reserveIn = BigInt(String(results[index * 2]?.[0] ?? 0));
+      const reserveOut = BigInt(String(results[index * 2 + 1]?.[0] ?? 0));
+      this.emitStableUpdate(subscription, reserveIn, reserveOut, blockNumber, source);
+    });
+  }
+
+  private emitStableUpdate(
+    subscription: StableSubscription,
+    reserveIn: bigint,
+    reserveOut: bigint,
+    blockNumber: number,
+    source: NonNullable<PoolUpdate["source"]>,
+  ): void {
+    const next = {
+      reserveIn: reserveIn.toString(),
+      reserveOut: reserveOut.toString(),
+    };
+    const previous = this.lastStableReserves.get(subscription.poolId);
+    if (previous && previous.reserveIn === next.reserveIn && previous.reserveOut === next.reserveOut) {
+      return;
+    }
+    this.lastStableReserves.set(subscription.poolId, next);
+
+    const update: PoolUpdate = {
+      pool_id: subscription.poolId,
+      reserve_in: next.reserveIn,
+      reserve_out: next.reserveOut,
+      block_number: blockNumber,
+      log_index: Number.MAX_SAFE_INTEGER,
+      sqrt_price_x96: undefined,
+      liquidity: undefined,
+      source,
+    };
+    this.emit("pool_update", update);
+  }
+
+  private async pollStablePoolsFromHead(source: NonNullable<PoolUpdate["source"]>): Promise<void> {
+    if (!this.recoveryProvider) {
+      return;
+    }
+
+    const blockNumber = await this.recoveryProvider.getBlockNumber();
+    this.cuMeter?.recordMethod("eth_blockNumber");
+    await this.pollStablePoolsBatched(blockNumber, source);
   }
 
   private async pollV3Pools(
@@ -456,35 +569,88 @@ export class PoolStream extends EventEmitter {
       return;
     }
 
-    await Promise.all(
-      this.v3Subscriptions.map(async (subscription) => {
-        try {
-          const contract = new Contract(subscription.poolAddress, uniswapV3PoolAbi, this.recoveryProvider);
-          const [slot0, liquidity] = await Promise.all([contract.slot0(), contract.liquidity()]);
-          const [reserveIn, reserveOut] = estimateV3Reserves(BigInt(slot0.sqrtPriceX96), BigInt(liquidity));
-          const next = {
-            reserveIn: reserveIn.toString(),
-            reserveOut: reserveOut.toString(),
-          };
-          const previous = this.lastV3Reserves.get(subscription.poolId);
-          if (previous && previous.reserveIn === next.reserveIn && previous.reserveOut === next.reserveOut) {
-            return;
-          }
-          this.lastV3Reserves.set(subscription.poolId, next);
+    const v3Interface = new Interface(uniswapV3PoolAbi);
+    const calls: BatchCall[] = this.v3Subscriptions.flatMap((subscription) => [
+      { target: subscription.poolAddress, iface: v3Interface, fn: "slot0", args: [] },
+      { target: subscription.poolAddress, iface: v3Interface, fn: "liquidity", args: [] },
+    ]);
 
-          const update: PoolUpdate = {
-            pool_id: subscription.poolId,
-            reserve_in: next.reserveIn,
-            reserve_out: next.reserveOut,
-            block_number: blockNumber,
-            source,
-          };
-          this.emit("pool_update", update);
-        } catch (error) {
-          this.log.error({ poolId: subscription.poolId, error }, "v3 pool polling failed");
-        }
-      }),
-    );
+    const results = await this.batchRead(calls);
+    this.v3Subscriptions.forEach((subscription, index) => {
+      const slot0 = results[index * 2];
+      const liquidityResult = results[index * 2 + 1];
+      const sqrtPriceX96 = BigInt(String(slot0?.[0] ?? 0));
+      const currentLiquidity = BigInt(String(liquidityResult?.[0] ?? 0));
+      const [reserveIn, reserveOut] = estimateV3Reserves(sqrtPriceX96, currentLiquidity);
+      const next = {
+        reserveIn: reserveIn.toString(),
+        reserveOut: reserveOut.toString(),
+      };
+      const previous = this.lastV3Reserves.get(subscription.poolId);
+      if (previous && previous.reserveIn === next.reserveIn && previous.reserveOut === next.reserveOut) {
+        return;
+      }
+      this.lastV3Reserves.set(subscription.poolId, next);
+
+      const update: PoolUpdate = {
+        pool_id: subscription.poolId,
+        reserve_in: next.reserveIn,
+        reserve_out: next.reserveOut,
+        block_number: blockNumber,
+        log_index: Number.MAX_SAFE_INTEGER,
+        sqrt_price_x96: sqrtPriceX96.toString(),
+        liquidity: currentLiquidity.toString(),
+        source,
+      };
+      this.emit("pool_update", update);
+    });
+  }
+
+  private async pollV3PoolsFromHead(source: NonNullable<PoolUpdate["source"]>): Promise<void> {
+    if (!this.recoveryProvider) {
+      return;
+    }
+
+    const blockNumber = await this.recoveryProvider.getBlockNumber();
+    this.cuMeter?.recordMethod("eth_blockNumber");
+    await this.pollV3Pools(blockNumber, source);
+  }
+
+  private async batchRead(calls: BatchCall[]): Promise<unknown[][]> {
+    if (!this.recoveryProvider || calls.length === 0) {
+      return [];
+    }
+
+    if (!this.config.MULTICALL3_ADDRESS) {
+      this.cuMeter?.recordMethod("eth_call", calls.length);
+      return Promise.all(
+        calls.map(async (call) => {
+          const encoded = call.iface.encodeFunctionData(call.fn, call.args);
+          const response = await this.recoveryProvider!.call({ to: call.target, data: encoded });
+          return call.iface.decodeFunctionResult(call.fn, response).toArray();
+        }),
+      );
+    }
+
+    const multicall = new Contract(this.config.MULTICALL3_ADDRESS, multicall3Abi, this.recoveryProvider);
+    this.cuMeter?.recordMethod("eth_call");
+    const aggregateCalls = calls.map((call) => ({
+      target: call.target,
+      allowFailure: true,
+      callData: call.iface.encodeFunctionData(call.fn, call.args),
+    }));
+    const responses = (await multicall.aggregate3.staticCall(aggregateCalls)) as Array<{
+      success: boolean;
+      returnData: string;
+    }>;
+
+    return responses.map((response, index) => {
+      if (!response.success) {
+        this.log.error({ target: calls[index]?.target, fn: calls[index]?.fn }, "multicall stream read failed");
+        return [];
+      }
+      return calls[index].iface.decodeFunctionResult(calls[index].fn, response.returnData).toArray();
+    });
   }
 }
 

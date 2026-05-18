@@ -4,25 +4,42 @@
   "description": "Multi-hop arbitrage workspace with TypeScript control plane, Rust hot-path engine, and Solidity flash-loan executor.",
   "main": "index.js",
   "scripts": {
-    "build:contracts": "npx hardhat compile",
+    "build:contracts": "npx hardhat compile --build-profile production",
     "test:contracts": "npx hardhat test",
+    "test:fork": "npx hardhat test test/ForkSmoke.ts",
     "test": "npm run test:contracts",
-    "build:rust": "cargo build --manifest-path rust-core/Cargo.toml",
+    "build:rust": "cargo build --release --manifest-path rust-core/Cargo.toml",
     "run:rust": "cargo run --manifest-path rust-core/Cargo.toml",
+    "bench:rust": "cargo run --release --manifest-path rust-core/Cargo.toml --bin throughput_bench",
     "build:control-plane": "npm --prefix control-plane run build",
-    "run:control-plane": "npm --prefix control-plane run dev"
+    "run:control-plane": "npm --prefix control-plane run dev",
+    "test:reorg": "npx hardhat test test/deterministicReorg.test.ts",
+    "test:integration": "npm run test:fork"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
+  "overrides": {
+    "elliptic": "6.5.4",
+    "lodash-es": "4.17.21"
+  },
   "dependencies": {
-    "hardhat": "^3.4.0"
+    "dotenv": "^16.6.1"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-ethers": "^4.0.8",
-    "@nomicfoundation/hardhat-ignition": "^0.15.16",
-    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.4",
+    "hardhat": "^3.4.3",
+    "@nomicfoundation/hardhat-ethers": "^4.0.10",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "^3.0.7",
+    "@nomicfoundation/hardhat-ignition": "^3.1.0",
+    "@nomicfoundation/hardhat-ignition-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-keystore": "^3.0.8",
+    "@nomicfoundation/hardhat-mocha": "^3.0.1",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.7",
+    "@nomicfoundation/hardhat-typechain": "^3.0.8",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.6",
+    "@nomicfoundation/hardhat-verify": "^3.0.16",
+    "@nomicfoundation/ignition-core": "^3.1.4",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/mocha": "^10.0.10",
@@ -30,7 +47,7 @@
     "chai": "^6.2.2",
     "ethers": "^6.16.0",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
-    "mocha": "^11.3.0",
+    "mocha": "^11.7.5",
     "typescript": "~5.8.0"
   }
 }

@@ -1,0 +1,34 @@
+[
+  {
+    "cycleId": "camelot-arb-weth-v2->uniswap-weth-arb-v3",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x4BF6493866a963c8F30eAA5acd3B09c45431Ca12",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
+        "path": [
+          "0x912CE59144191C1204E64559FE8253a0e49E6548",
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0x71AB046Be68AFAFEA0792b4c5821d669DD3d8Fbe",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  }
+]
