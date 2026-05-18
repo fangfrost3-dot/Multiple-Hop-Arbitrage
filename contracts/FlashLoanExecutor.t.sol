@@ -81,4 +81,59 @@ contract FlashLoanExecutorTest is Test {
     vm.expectRevert();
     executor.requestFlashLoan(address(baseToken), 100 ether, abi.encode(plan));
   }
+
+  function test_RevertsWhenProfitTokenDiffersFromBorrowedAsset() public {
+    FlashLoanExecutor.SwapInstruction[] memory swaps = new FlashLoanExecutor.SwapInstruction[](2);
+    swaps[0] = FlashLoanExecutor.SwapInstruction({
+      adapter: address(profitableAdapter),
+      tokenIn: address(baseToken),
+      tokenOut: address(quoteToken),
+      routeData: ""
+    });
+    swaps[1] = FlashLoanExecutor.SwapInstruction({
+      adapter: address(returnAdapter),
+      tokenIn: address(quoteToken),
+      tokenOut: address(baseToken),
+      routeData: ""
+    });
+
+    FlashLoanExecutor.ExecutionPlan memory plan = FlashLoanExecutor.ExecutionPlan({
+      profitToken: address(quoteToken),
+      minProfit: 1 ether,
+      profitRecipient: profitRecipient,
+      swaps: swaps
+    });
+
+    vm.expectRevert(FlashLoanExecutor.InvalidProfitToken.selector);
+    executor.requestFlashLoan(address(baseToken), 100 ether, abi.encode(plan));
+  }
+
+  function test_PreExistingBalanceIsNotCountedAsProfit() public {
+    FlashLoanExecutor.SwapInstruction[] memory swaps = new FlashLoanExecutor.SwapInstruction[](2);
+    swaps[0] = FlashLoanExecutor.SwapInstruction({
+      adapter: address(returnAdapter),
+      tokenIn: address(baseToken),
+      tokenOut: address(quoteToken),
+      routeData: ""
+    });
+    swaps[1] = FlashLoanExecutor.SwapInstruction({
+      adapter: address(returnAdapter),
+      tokenIn: address(quoteToken),
+      tokenOut: address(baseToken),
+      routeData: ""
+    });
+
+    FlashLoanExecutor.ExecutionPlan memory plan = FlashLoanExecutor.ExecutionPlan({
+      profitToken: address(baseToken),
+      minProfit: 1 ether,
+      profitRecipient: profitRecipient,
+      swaps: swaps
+    });
+
+    baseToken.mint(address(executor), 20 ether);
+
+    vm.expectRevert();
+    executor.requestFlashLoan(address(baseToken), 100 ether, abi.encode(plan));
+    assertEq(baseToken.balanceOf(profitRecipient), 0);
+  }
 }

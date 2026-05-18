@@ -2,6 +2,9 @@
 /node_modules
 /control-plane/node_modules
 
+# IDE state
+/.vs
+
 # Compilation output
 /dist
 /control-plane/dist
@@ -18,10 +21,17 @@
 # Typechain output
 /types
 
+# Rust build output
+/rust-core/target
+
 # Environment files
 .env
 .env.*
 !.env.example
+
+# Local secrets
+/secrets
+*.key
 
 # Hardhat coverage reports
 /coverage

@@ -23,6 +23,7 @@ impl EngineConfig {
                 max_input_share_bps: read_env_u32("ENGINE_MAX_INPUT_SHARE_BPS", 1_000),
                 optimization_steps: read_env_usize("ENGINE_OPTIMIZATION_STEPS", 12),
                 stable_max_imbalance_bps: read_env_u32("ENGINE_STABLE_MAX_IMBALANCE_BPS", 500),
+                min_cycle_edge_profit_bps: read_env_u32("ENGINE_MIN_CYCLE_EDGE_PROFIT_BPS", 0),
             },
         }
     }

@@ -1,17 +1,20 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
 import { dirname } from "node:path";
-import { AbiCoder, Interface, JsonRpcProvider, Wallet } from "ethers";
+import { AbiCoder, Contract, Interface, JsonRpcProvider, Wallet } from "ethers";
 import { createLogger } from "./logger.js";
 import { flashLoanExecutorAbi } from "./executorAbi.js";
+import { OneInchClient } from "./oneInch.js";
 class NonceCoordinator {
     provider;
     address;
+    cuMeter;
     nextNonce = null;
     pending = Promise.resolve();
-    constructor(provider, address) {
+    constructor(provider, address, cuMeter) {
         this.provider = provider;
         this.address = address;
+        this.cuMeter = cuMeter;
     }
     async acquire() {
         await this.pending;
@@ -20,6 +23,7 @@ class NonceCoordinator {
         try {
             if (this.nextNonce === null) {
                 this.nextNonce = await this.provider.getTransactionCount(this.address, "pending");
+                this.cuMeter?.recordMethod("eth_getTransactionCount");
             }
             const nonce = this.nextNonce;
             this.nextNonce = nonce + 1;
@@ -36,13 +40,16 @@ class NonceCoordinator {
 export class ExecutorClient {
     static FEE_CACHE_TTL_MS = 5_000;
     static GAS_ESTIMATE_TTL_MS = 30_000;
+    static erc20BalanceAbi = ["function balanceOf(address owner) view returns (uint256)"];
     log = createLogger("executor");
+    cuMeter;
     provider;
     relayProvider;
     signerWallet;
     address;
     nonceCoordinator;
     submissionMode;
+    allowPublicMempool;
     contractAddress;
     profitRecipient;
     journalPath;
@@ -54,6 +61,7 @@ export class ExecutorClient {
     allowedRouteKinds;
     maxBorrowAmount;
     maxRouteHops;
+    minProfitRealizationBps;
     maxConsecutiveFailures;
     maxTotalFailures;
     maxCumulativeEstimatedLossWei;
@@ -61,12 +69,15 @@ export class ExecutorClient {
     maxGasCostWei;
     confirmations;
     replacementBumpBps;
+    stuckTxTimeoutMs;
+    maxReplacements;
     maxInflight;
     routeByCycleId;
+    oneInch;
     contractInterface = new Interface(flashLoanExecutorAbi);
     abiCoder = AbiCoder.defaultAbiCoder();
     inflight = new Map();
-    gasEstimateByCycleId = new Map();
+    gasEstimateCache = new Map();
     metrics = {
         submitted: 0,
         submittedPublic: 0,
@@ -85,7 +96,12 @@ export class ExecutorClient {
     pauseReason;
     feeDataCache;
     feeRefreshPromise;
-    constructor(config, routes) {
+    constructor(config, routes, cuMeter) {
+        this.cuMeter = cuMeter;
+        this.oneInch = new OneInchClient(config.ONE_INCH_API_KEY, config.ONE_INCH_API_BASE_URL);
+        if (routes.some((route) => route.swaps.some((swap) => swap.kind === "one_inch")) && !this.oneInch.isEnabled()) {
+            throw new Error("ONE_INCH_API_KEY is required when one_inch routes are configured");
+        }
         this.routeByCycleId = new Map(routes.map((route) => [
             route.cycleId,
             {
@@ -95,34 +111,57 @@ export class ExecutorClient {
                 profitToken: route.profitToken,
                 profitTokenLower: route.profitToken.toLowerCase(),
                 minProfit: BigInt(route.minProfit),
-                swaps: route.swaps.map((swap) => swap.kind === "v2"
-                    ? {
-                        kind: "v2",
-                        adapter: swap.adapter,
-                        tokenIn: swap.tokenIn,
-                        tokenOut: swap.tokenOut,
-                        router: swap.router,
-                        path: swap.path,
-                        amountOutMin: BigInt(swap.amountOutMin),
-                        deadlineSeconds: swap.deadlineSeconds,
+                swaps: route.swaps.map((swap) => {
+                    if (swap.kind === "v2") {
+                        return {
+                            kind: "v2",
+                            adapter: swap.adapter,
+                            tokenIn: swap.tokenIn,
+                            tokenOut: swap.tokenOut,
+                            router: swap.router,
+                            path: swap.path,
+                            amountOutMin: BigInt(swap.amountOutMin),
+                            deadlineSeconds: swap.deadlineSeconds,
+                        };
                     }
-                    : {
-                        kind: "v3",
+                    if (swap.kind === "v3") {
+                        return {
+                            kind: "v3",
+                            adapter: swap.adapter,
+                            tokenIn: swap.tokenIn,
+                            tokenOut: swap.tokenOut,
+                            router: swap.router,
+                            fee: swap.fee,
+                            amountOutMin: BigInt(swap.amountOutMin),
+                            deadlineSeconds: swap.deadlineSeconds,
+                            sqrtPriceLimitX96: BigInt(swap.sqrtPriceLimitX96),
+                        };
+                    }
+                    return {
+                        kind: "one_inch",
                         adapter: swap.adapter,
                         tokenIn: swap.tokenIn,
                         tokenOut: swap.tokenOut,
                         router: swap.router,
-                        fee: swap.fee,
-                        amountOutMin: BigInt(swap.amountOutMin),
-                        deadlineSeconds: swap.deadlineSeconds,
-                        sqrtPriceLimitX96: BigInt(swap.sqrtPriceLimitX96),
-                    }),
+                        chainId: swap.chainId,
+                        slippageBps: swap.slippageBps,
+                        protocols: swap.protocols,
+                        referrerAddress: swap.referrerAddress,
+                        complexityLevel: swap.complexityLevel,
+                        disableEstimate: swap.disableEstimate,
+                        allowPartialFill: swap.allowPartialFill,
+                        includeTokensInfo: swap.includeTokensInfo,
+                        includeProtocols: swap.includeProtocols,
+                        includeGas: swap.includeGas,
+                    };
+                }),
                 routeHops: route.swaps.length,
             },
         ]));
         this.contractAddress = config.EXECUTOR_CONTRACT_ADDRESS;
         this.profitRecipient = config.EXECUTOR_PROFIT_RECIPIENT;
         this.submissionMode = config.EXECUTOR_SUBMISSION_MODE;
+        this.allowPublicMempool = config.EXECUTOR_ALLOW_PUBLIC_MEMPOOL;
         this.journalPath = config.EXECUTOR_JOURNAL_PATH;
         this.outcomePath = config.EXECUTOR_OUTCOME_PATH;
         this.allowedBorrowTokens = this.parseAddressSet(config.EXECUTOR_ALLOWED_BORROW_TOKENS);
@@ -132,6 +171,7 @@ export class ExecutorClient {
         this.allowedRouteKinds = this.parseRouteKindSet(config.EXECUTOR_ALLOWED_ROUTE_KINDS);
         this.maxBorrowAmount = config.EXECUTOR_MAX_BORROW_AMOUNT;
         this.maxRouteHops = config.EXECUTOR_MAX_ROUTE_HOPS;
+        this.minProfitRealizationBps = BigInt(config.EXECUTOR_MIN_PROFIT_REALIZATION_BPS);
         this.maxConsecutiveFailures = config.EXECUTOR_MAX_CONSECUTIVE_FAILURES;
         this.maxTotalFailures = config.EXECUTOR_MAX_TOTAL_FAILURES;
         this.maxCumulativeEstimatedLossWei = config.EXECUTOR_MAX_CUMULATIVE_ESTIMATED_LOSS_WEI;
@@ -139,25 +179,33 @@ export class ExecutorClient {
         this.maxGasCostWei = config.MAX_GAS_COST_WEI;
         this.confirmations = config.EXECUTOR_CONFIRMATIONS;
         this.replacementBumpBps = BigInt(config.EXECUTOR_REPLACEMENT_BUMP_BPS);
+        this.stuckTxTimeoutMs = config.EXECUTOR_STUCK_TX_TIMEOUT_MS;
+        this.maxReplacements = config.EXECUTOR_MAX_REPLACEMENTS;
         this.maxInflight = config.EXECUTOR_MAX_INFLIGHT;
         this.paused = config.EXECUTOR_START_PAUSED;
         this.pauseReason = config.EXECUTOR_START_PAUSED ? "executor start paused by configuration" : undefined;
-        if (config.RPC_URL && config.EXECUTOR_PRIVATE_KEY) {
+        if (config.RPC_URL) {
             this.provider = new JsonRpcProvider(config.RPC_URL);
+        }
+        if (config.EXECUTOR_PRIVATE_KEY) {
             this.signerWallet = new Wallet(config.EXECUTOR_PRIVATE_KEY);
             this.address = this.signerWallet.address.toLowerCase();
         }
-        if (config.PRIVATE_RELAY_RPC_URL && config.EXECUTOR_PRIVATE_KEY) {
+        if (config.PRIVATE_RELAY_RPC_URL) {
             this.relayProvider = new JsonRpcProvider(config.PRIVATE_RELAY_RPC_URL);
         }
         if (this.signerWallet && (this.provider || this.relayProvider)) {
             const probe = this.provider ?? this.relayProvider;
-            this.nonceCoordinator = new NonceCoordinator(probe, this.signerWallet.address);
+            this.nonceCoordinator = new NonceCoordinator(probe, this.signerWallet.address, this.cuMeter);
         }
         if (this.provider) {
-            void this.refreshFeeData();
-            setInterval(() => {
+            if (!this.paused) {
                 void this.refreshFeeData();
+            }
+            setInterval(() => {
+                if (!this.paused) {
+                    void this.refreshFeeData();
+                }
             }, ExecutorClient.FEE_CACHE_TTL_MS).unref();
         }
     }
@@ -172,6 +220,21 @@ export class ExecutorClient {
                 event: "risk_rejected",
                 cycleId: candidate.cycle_id,
                 reason: this.pauseReason ?? "executor paused",
+                borrowToken: candidate.borrow_token,
+                borrowAmount: candidate.borrow_amount,
+                expectedProfit: candidate.expected_profit,
+            });
+            return;
+        }
+        const submissionDisabledReason = this.submissionDisabledReason();
+        if (submissionDisabledReason) {
+            this.metrics.riskRejected += 1;
+            this.log.info({ cycleId: candidate.cycle_id, reason: submissionDisabledReason }, "candidate rejected because submission is not ready");
+            await this.writeJournal({
+                timestamp: Date.now(),
+                event: "risk_rejected",
+                cycleId: candidate.cycle_id,
+                reason: submissionDisabledReason,
                 borrowToken: candidate.borrow_token,
                 borrowAmount: candidate.borrow_amount,
                 expectedProfit: candidate.expected_profit,
@@ -213,7 +276,33 @@ export class ExecutorClient {
             this.log.error({ cycleId: candidate.cycle_id }, "route borrow token does not match candidate");
             return;
         }
-        const params = this.encodeExecutionPlan(routePlan);
+        const effectiveMinProfit = this.effectiveMinProfit(routePlan, BigInt(candidate.expected_profit));
+        if (BigInt(candidate.expected_profit) <= effectiveMinProfit) {
+            const reason = "candidate expected profit below slippage-adjusted minimum profit gate";
+            this.metrics.riskRejected += 1;
+            this.log.info({
+                cycleId: candidate.cycle_id,
+                expectedProfit: candidate.expected_profit,
+                effectiveMinProfit: effectiveMinProfit.toString(),
+            }, reason);
+            await this.writeJournal({
+                timestamp: Date.now(),
+                event: "risk_rejected",
+                cycleId: candidate.cycle_id,
+                reason,
+                borrowToken: candidate.borrow_token,
+                borrowAmount: candidate.borrow_amount,
+                expectedProfit: candidate.expected_profit,
+                routeHops,
+                details: {
+                    configuredMinProfit: routePlan.minProfit.toString(),
+                    minProfitRealizationBps: Number(this.minProfitRealizationBps),
+                    effectiveMinProfit: effectiveMinProfit.toString(),
+                },
+            });
+            return;
+        }
+        const params = await this.encodeExecutionPlan(routePlan, BigInt(candidate.borrow_amount), effectiveMinProfit);
         const calldata = this.contractInterface.encodeFunctionData("requestFlashLoan", [
             candidate.borrow_token,
             BigInt(candidate.borrow_amount),
@@ -234,17 +323,51 @@ export class ExecutorClient {
         }
         const estimatedGasCostWei = gasEstimate * gasPrice;
         if (this.maxGasCostWei > 0n && estimatedGasCostWei > this.maxGasCostWei) {
-            this.log.info({ cycleId: candidate.cycle_id, estimatedGasCostWei: estimatedGasCostWei.toString() }, "skipping candidate above max gas gate");
+            const reason = "candidate rejected above max gas cost gate";
+            this.metrics.riskRejected += 1;
+            this.log.info({ cycleId: candidate.cycle_id, estimatedGasCostWei: estimatedGasCostWei.toString(), maxGasCostWei: this.maxGasCostWei.toString() }, reason);
+            await this.writeJournal({
+                timestamp: Date.now(),
+                event: "risk_rejected",
+                cycleId: candidate.cycle_id,
+                reason,
+                borrowToken: candidate.borrow_token,
+                borrowAmount: candidate.borrow_amount,
+                expectedProfit: candidate.expected_profit,
+                routeHops,
+                details: {
+                    estimatedGasCostWei: estimatedGasCostWei.toString(),
+                    maxGasCostWei: this.maxGasCostWei.toString(),
+                },
+            });
             return;
         }
         if (this.wrappedNativeToken && candidate.borrow_token.toLowerCase() === this.wrappedNativeToken) {
-            const requiredProfit = estimatedGasCostWei + routePlan.minProfit;
+            const requiredProfit = estimatedGasCostWei + effectiveMinProfit;
             if (BigInt(candidate.expected_profit) <= requiredProfit) {
+                const reason = "candidate rejected below gas-adjusted profit gate";
+                this.metrics.riskRejected += 1;
                 this.log.info({
                     cycleId: candidate.cycle_id,
                     expectedProfit: candidate.expected_profit,
                     estimatedGasCostWei: estimatedGasCostWei.toString(),
-                }, "skipping candidate below profit gate");
+                    requiredProfit: requiredProfit.toString(),
+                }, reason);
+                await this.writeJournal({
+                    timestamp: Date.now(),
+                    event: "risk_rejected",
+                    cycleId: candidate.cycle_id,
+                    reason,
+                    borrowToken: candidate.borrow_token,
+                    borrowAmount: candidate.borrow_amount,
+                    expectedProfit: candidate.expected_profit,
+                    routeHops,
+                    details: {
+                        estimatedGasCostWei: estimatedGasCostWei.toString(),
+                        effectiveMinProfit: effectiveMinProfit.toString(),
+                        requiredProfit: requiredProfit.toString(),
+                    },
+                });
                 return;
             }
         }
@@ -256,17 +379,24 @@ export class ExecutorClient {
             maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
             gasPrice: feeData.maxFeePerGas ? undefined : gasPrice,
         };
+        const profitRecipientBalanceBefore = await this.readProfitRecipientBalance(routePlan.profitToken);
         const { tx, submissionTarget } = await this.sendTransaction(txRequest, candidate.cycle_id);
         const submissionMs = mark();
+        const submittedAt = Date.now();
         const execution = {
             cycleId: candidate.cycle_id,
             txHash: tx.hash,
             nonce: tx.nonce,
-            submittedAt: Date.now(),
+            submittedAt,
+            lastBroadcastAt: submittedAt,
+            replacementCount: 0,
             submissionTarget,
             borrowToken: candidate.borrow_token,
             borrowAmount: candidate.borrow_amount,
             expectedProfit: candidate.expected_profit,
+            profitToken: routePlan.profitToken,
+            profitRecipient: this.profitRecipient,
+            profitRecipientBalanceBefore: profitRecipientBalanceBefore?.toString(),
             routeHops,
             gasLimit: String(txRequest.gasLimit ?? 0n),
             maxFeePerGas: txRequest.maxFeePerGas ? String(txRequest.maxFeePerGas) : undefined,
@@ -309,6 +439,7 @@ export class ExecutorClient {
                 maxFeePerGas: execution.maxFeePerGas,
                 maxPriorityFeePerGas: execution.maxPriorityFeePerGas,
                 gasPrice: execution.gasPrice,
+                replacementCount: execution.replacementCount,
                 validationMs,
                 rpcPrepMs: Math.round((rpcPrepMs - validationMs) * 100) / 100,
                 submissionMs: Math.round((submissionMs - rpcPrepMs) * 100) / 100,
@@ -322,27 +453,68 @@ export class ExecutorClient {
     hasRoute(cycleId) {
         return this.routeByCycleId.has(cycleId);
     }
-    encodeExecutionPlan(route) {
-        const swaps = route.swaps.map((swap) => [
+    async encodeExecutionPlan(route, borrowAmount, minProfit) {
+        const swaps = await Promise.all(route.swaps.map(async (swap, index) => [
             swap.adapter,
             swap.tokenIn,
             swap.tokenOut,
-            this.encodeRouteData(swap),
-        ]);
+            await this.encodeRouteData(swap, index === 0 ? borrowAmount : undefined),
+        ]));
         return this.abiCoder.encode([
             "tuple(address profitToken,uint256 minProfit,address profitRecipient,tuple(address adapter,address tokenIn,address tokenOut,bytes routeData)[] swaps)",
-        ], [[route.profitToken, route.minProfit, this.profitRecipient, swaps]]);
+        ], [[route.profitToken, minProfit, this.profitRecipient, swaps]]);
     }
-    encodeRouteData(swap) {
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + swap.deadlineSeconds);
+    effectiveMinProfit(route, expectedProfit) {
+        if (this.minProfitRealizationBps <= 0n) {
+            return route.minProfit;
+        }
+        const realizedProfitFloor = (expectedProfit * this.minProfitRealizationBps) / 10000n;
+        return realizedProfitFloor > route.minProfit ? realizedProfitFloor : route.minProfit;
+    }
+    async encodeRouteData(swap, amountIn) {
         if (swap.kind === "v2") {
+            const deadline = BigInt(Math.floor(Date.now() / 1000) + swap.deadlineSeconds);
             return this.abiCoder.encode(["tuple(address router,address[] path,uint256 amountOutMin,uint256 deadline)"], [[swap.router, swap.path, swap.amountOutMin, deadline]]);
         }
-        return this.abiCoder.encode(["tuple(address router,uint24 fee,uint256 amountOutMin,uint256 deadline,uint160 sqrtPriceLimitX96)"], [[swap.router, swap.fee, swap.amountOutMin, deadline, swap.sqrtPriceLimitX96]]);
+        if (swap.kind === "v3") {
+            const deadline = BigInt(Math.floor(Date.now() / 1000) + swap.deadlineSeconds);
+            return this.abiCoder.encode(["tuple(address router,uint24 fee,uint256 amountOutMin,uint256 deadline,uint160 sqrtPriceLimitX96)"], [[swap.router, swap.fee, swap.amountOutMin, deadline, swap.sqrtPriceLimitX96]]);
+        }
+        if (!this.contractAddress) {
+            throw new Error("executor contract address missing for one_inch route encoding");
+        }
+        if (amountIn === undefined) {
+            throw new Error("one_inch routes are only supported as the first hop of an execution plan");
+        }
+        const quote = await this.oneInch.buildSwap({
+            chainId: swap.chainId,
+            fromTokenAddress: swap.tokenIn,
+            toTokenAddress: swap.tokenOut,
+            amount: amountIn,
+            fromAddress: swap.adapter,
+            receiver: this.contractAddress,
+            slippageBps: swap.slippageBps,
+            protocols: swap.protocols,
+            referrerAddress: swap.referrerAddress,
+            complexityLevel: swap.complexityLevel,
+            disableEstimate: swap.disableEstimate,
+            allowPartialFill: swap.allowPartialFill,
+            includeTokensInfo: swap.includeTokensInfo,
+            includeProtocols: swap.includeProtocols,
+            includeGas: swap.includeGas,
+        });
+        if (quote.tx.to.toLowerCase() !== swap.router.toLowerCase()) {
+            throw new Error(`1inch router mismatch for adapter ${swap.adapter}`);
+        }
+        if (quote.tx.value && quote.tx.value !== "0") {
+            throw new Error("1inch route returned non-zero native value; ERC20-only adapter rejects this");
+        }
+        return this.abiCoder.encode(["tuple(address router,bytes data)"], [[swap.router, quote.tx.data]]);
     }
     async getGasEstimate(cycleId, from, calldata) {
         const now = Date.now();
-        const cached = this.gasEstimateByCycleId.get(cycleId);
+        const cacheKey = `${cycleId}:${calldata}`;
+        const cached = this.gasEstimateCache.get(cacheKey);
         if (cached && now - cached.updatedAt <= ExecutorClient.GAS_ESTIMATE_TTL_MS) {
             return cached.gasEstimate;
         }
@@ -354,7 +526,8 @@ export class ExecutorClient {
             from,
             data: calldata,
         });
-        this.gasEstimateByCycleId.set(cycleId, { gasEstimate, updatedAt: now });
+        this.cuMeter?.recordMethod("eth_estimateGas");
+        this.gasEstimateCache.set(cacheKey, { gasEstimate, updatedAt: now });
         return gasEstimate;
     }
     async getCachedFeeData() {
@@ -378,6 +551,9 @@ export class ExecutorClient {
         this.feeRefreshPromise = this.provider
             .getFeeData()
             .then((feeData) => {
+            this.cuMeter?.recordMethod("eth_getBlockByNumber");
+            this.cuMeter?.recordMethod("eth_gasPrice");
+            this.cuMeter?.recordMethod("eth_maxPriorityFeePerGas");
             this.feeDataCache = {
                 maxFeePerGas: feeData.maxFeePerGas ?? undefined,
                 maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
@@ -402,6 +578,7 @@ export class ExecutorClient {
             return;
         }
         const receipt = await this.provider.waitForTransaction(hash, this.confirmations);
+        this.cuMeter?.recordMethod("eth_getTransactionReceipt");
         this.inflight.delete(hash);
         this.metrics.inflight = this.inflight.size;
         if (!receipt) {
@@ -471,6 +648,7 @@ export class ExecutorClient {
                 gasUsed: receipt.gasUsed.toString(),
                 txCostWei: txCostWei.toString(),
                 estimatedNetProfitWei: estimatedNetProfitWei?.toString(),
+                realizedProfitTokenDelta: (await this.realizedProfitTokenDelta(record))?.toString(),
                 cumulativeEstimatedNetWei: this.cumulativeEstimatedNetWei.toString(),
             });
             await this.maybePauseOnEstimatedLoss("confirmed transaction estimated net below threshold");
@@ -511,6 +689,7 @@ export class ExecutorClient {
             gasUsed: receipt.gasUsed.toString(),
             txCostWei: txCostWei.toString(),
             estimatedNetProfitWei: estimatedNetProfitWei.toString(),
+            realizedProfitTokenDelta: (await this.realizedProfitTokenDelta(record))?.toString(),
             cumulativeEstimatedNetWei: this.cumulativeEstimatedNetWei.toString(),
         });
         await this.maybePause("transaction reverted");
@@ -521,7 +700,16 @@ export class ExecutorClient {
             return;
         }
         for (const record of this.inflight.values()) {
+            if (Date.now() - record.lastBroadcastAt < this.stuckTxTimeoutMs) {
+                continue;
+            }
+            if (record.replacementCount >= this.maxReplacements) {
+                this.log.error({ hash: record.txHash, cycleId: record.cycleId, replacementCount: record.replacementCount }, "max transaction replacements reached");
+                await this.pause(`circuit breaker triggered: tx replacement limit reached for ${record.cycleId}`);
+                continue;
+            }
             const tx = await this.provider.getTransaction(record.txHash);
+            this.cuMeter?.recordMethod("eth_getTransactionByHash");
             if (!tx || tx.blockNumber) {
                 continue;
             }
@@ -550,7 +738,8 @@ export class ExecutorClient {
             this.inflight.set(replacement.hash, {
                 ...record,
                 txHash: replacement.hash,
-                submittedAt: Date.now(),
+                lastBroadcastAt: Date.now(),
+                replacementCount: record.replacementCount + 1,
                 maxFeePerGas: bumped.maxFeePerGas ? String(bumped.maxFeePerGas) : record.maxFeePerGas,
                 maxPriorityFeePerGas: bumped.maxPriorityFeePerGas ? String(bumped.maxPriorityFeePerGas) : record.maxPriorityFeePerGas,
                 gasPrice: bumped.gasPrice ? String(bumped.gasPrice) : record.gasPrice,
@@ -571,6 +760,7 @@ export class ExecutorClient {
                 details: {
                     replacedHash: record.txHash,
                     submissionTarget: record.submissionTarget,
+                    replacementCount: record.replacementCount + 1,
                     maxFeePerGas: bumped.maxFeePerGas?.toString(),
                     maxPriorityFeePerGas: bumped.maxPriorityFeePerGas?.toString(),
                     gasPrice: bumped.gasPrice?.toString(),
@@ -591,9 +781,14 @@ export class ExecutorClient {
         };
     }
     async resume() {
+        const submissionDisabledReason = this.submissionDisabledReason();
+        if (submissionDisabledReason) {
+            throw new Error(`cannot resume executor: ${submissionDisabledReason}`);
+        }
         this.paused = false;
         this.pauseReason = undefined;
         this.metrics.consecutiveFailures = 0;
+        void this.refreshFeeData();
         this.log.info({}, "executor resumed");
         await this.writeJournal({
             timestamp: Date.now(),
@@ -601,6 +796,9 @@ export class ExecutorClient {
             cycleId: "system",
             reason: "manual resume",
         });
+    }
+    async pauseManual(reason = "manual pause") {
+        await this.pause(reason);
     }
     async sendTransaction(txRequest, cycleId) {
         const relayAllowed = this.submissionMode !== "public_only";
@@ -616,6 +814,7 @@ export class ExecutorClient {
             try {
                 const signer = this.signerWallet.connect(this.relayProvider);
                 const tx = await signer.sendTransaction(txRequest);
+                this.cuMeter?.recordMethod("eth_sendRawTransaction");
                 return { tx, submissionTarget: "relay" };
             }
             catch (error) {
@@ -628,6 +827,7 @@ export class ExecutorClient {
         if (publicAllowed && this.provider) {
             const signer = this.signerWallet.connect(this.provider);
             const tx = await signer.sendTransaction(txRequest);
+            this.cuMeter?.recordMethod("eth_sendRawTransaction");
             return { tx, submissionTarget: "public" };
         }
         throw new Error("no available submission path for executor");
@@ -675,7 +875,7 @@ export class ExecutorClient {
         const validKinds = value
             .split(",")
             .map((entry) => entry.trim().toLowerCase())
-            .filter((entry) => entry === "v2" || entry === "v3");
+            .filter((entry) => entry === "v2" || entry === "v3" || entry === "one_inch");
         return validKinds.length > 0 ? new Set(validKinds) : undefined;
     }
     signerForTarget(target) {
@@ -685,6 +885,54 @@ export class ExecutorClient {
         if (!provider)
             return undefined;
         return this.signerWallet.connect(provider);
+    }
+    submissionDisabledReason() {
+        if (!this.contractAddress) {
+            return "executor contract address is not configured";
+        }
+        if (!this.profitRecipient) {
+            return "executor profit recipient is not configured";
+        }
+        if (!this.provider) {
+            return "public RPC_URL is required for gas estimation and confirmation tracking";
+        }
+        if (!this.signerWallet || !this.nonceCoordinator) {
+            return "executor signer is not configured";
+        }
+        if (!this.allowedBorrowTokens || this.allowedBorrowTokens.size === 0) {
+            return "borrow-token allowlist is not configured";
+        }
+        if (!this.allowedProfitTokens || this.allowedProfitTokens.size === 0) {
+            return "profit-token allowlist is not configured";
+        }
+        if (!this.allowedAdapters || this.allowedAdapters.size === 0) {
+            return "adapter allowlist is not configured";
+        }
+        if (!this.allowedRouters || this.allowedRouters.size === 0) {
+            return "router allowlist is not configured";
+        }
+        if (!this.allowedRouteKinds || this.allowedRouteKinds.size === 0) {
+            return "route-kind allowlist is not configured";
+        }
+        if (this.maxBorrowAmount <= 0n) {
+            return "max borrow amount must be greater than zero";
+        }
+        if (this.maxRouteHops <= 0) {
+            return "max route hops must be greater than zero";
+        }
+        if (this.maxGasCostWei <= 0n) {
+            return "max gas cost must be greater than zero";
+        }
+        if (this.maxCumulativeEstimatedLossWei <= 0n) {
+            return "max cumulative estimated loss must be greater than zero";
+        }
+        if (this.submissionMode === "relay_only" && !this.relayProvider) {
+            return "private relay RPC URL is required for relay_only submission";
+        }
+        if (this.submissionMode !== "relay_only" && !this.allowPublicMempool) {
+            return "public mempool submission is not explicitly allowed";
+        }
+        return undefined;
     }
     recordFailure(kind) {
         this.metrics.totalFailures += 1;
@@ -734,6 +982,26 @@ export class ExecutorClient {
             return;
         }
         this.cumulativeEstimatedNetWei += value;
+    }
+    async readProfitRecipientBalance(token) {
+        if (!this.provider || !this.profitRecipient) {
+            return undefined;
+        }
+        const contract = new Contract(token, ExecutorClient.erc20BalanceAbi, this.provider);
+        const balance = await contract.balanceOf(this.profitRecipient);
+        this.cuMeter?.recordMethod("eth_call");
+        return BigInt(balance);
+    }
+    async realizedProfitTokenDelta(record) {
+        if (record.profitRecipientBalanceBefore === undefined) {
+            return undefined;
+        }
+        const currentBalance = await this.readProfitRecipientBalance(record.profitToken);
+        if (currentBalance === undefined) {
+            return undefined;
+        }
+        const before = BigInt(record.profitRecipientBalanceBefore);
+        return currentBalance >= before ? currentBalance - before : 0n;
     }
     async pause(reason) {
         if (this.paused) {

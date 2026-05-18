@@ -1,14 +1,6 @@
-mod config;
-mod engine;
-mod graph;
-mod messages;
-mod pruning;
-mod simulator;
-mod state;
-
 use anyhow::Result;
-use config::EngineConfig;
-use engine::HotPathEngine;
+use rust_core::config::EngineConfig;
+use rust_core::engine::HotPathEngine;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]

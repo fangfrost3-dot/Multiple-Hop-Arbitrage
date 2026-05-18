@@ -5,6 +5,7 @@ const describeFork = process.env.FORK_RPC_URL ? describe : describe.skip;
 
 describeFork("Fork smoke", function () {
   it("creates a forked Arbitrum network connection and mines a transaction", async function () {
+    this.timeout(120_000);
     const { ethers } = await network.create({
       network: "hardhatArbitrum",
     });

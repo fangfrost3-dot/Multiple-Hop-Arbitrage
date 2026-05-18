@@ -51,6 +51,10 @@ pub struct PoolSnapshot {
     pub dex: String,
     pub pool_kind: PoolKind,
     pub amp_factor: Option<u64>,
+    #[serde(with = "string_u128", default)]
+    pub sqrt_price_x96: u128,
+    #[serde(with = "string_u128", default)]
+    pub liquidity: u128,
     pub token_in: String,
     pub token_out: String,
     #[serde(with = "string_u128")]
@@ -76,6 +80,11 @@ pub struct PoolUpdate {
     #[serde(with = "string_u128")]
     pub reserve_out: u128,
     pub block_number: u64,
+    pub log_index: Option<u64>,
+    #[serde(with = "string_u128", default)]
+    pub sqrt_price_x96: u128,
+    #[serde(with = "string_u128", default)]
+    pub liquidity: u128,
     pub source: Option<UpdateSource>,
     pub replay_from_block: Option<u64>,
     pub replay_to_block: Option<u64>,
@@ -106,7 +115,14 @@ pub enum ControlMessage {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum EngineMessage {
     Ready,
-    Health { tracked_pools: usize, tracked_cycles: usize, latest_block: u64 },
+    Health {
+        tracked_pools: usize,
+        tracked_cycles: usize,
+        latest_block: u64,
+        bellman_ford_candidates_total: u64,
+        simulated_cycles_total: u64,
+        profitable_candidates_total: u64,
+    },
     Candidate(ExecutionCandidate),
     Log { level: String, message: String },
 }

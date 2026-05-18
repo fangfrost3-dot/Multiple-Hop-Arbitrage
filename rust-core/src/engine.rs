@@ -1,5 +1,5 @@
 use crate::config::EngineConfig;
-use crate::graph::TokenGraph;
+use crate::graph::{bellman_ford_negative_cycles, TokenGraph};
 use crate::messages::{ControlMessage, EngineMessage, UpdateSource};
 use crate::pruning::{pool_is_eligible, PruneConfig};
 use crate::simulator::{simulate_cycle, SimulationConfig};
@@ -149,9 +149,14 @@ impl HotPathEngine {
                                 ReplayDecision::None => {}
                             }
 
-                            let candidates = self
-                                .graph
-                                .affected_cycles(&update.pool_id)
+                            let eligible = self
+                                .state
+                                .iter()
+                                .into_iter()
+                                .filter(|pool| pool_is_eligible(pool, &self.prune))
+                                .collect::<Vec<_>>();
+
+                            let candidates = bellman_ford_negative_cycles(&eligible, &update.pool_id, self.prune.max_hops)
                                 .into_par_iter()
                                 .filter_map(|cycle| simulate_cycle(&self.state, &cycle, &self.simulation))
                                 .collect::<Vec<_>>();
@@ -169,6 +174,7 @@ impl HotPathEngine {
                         UpdateOutcome::Stale {
                             current_block,
                             update_block,
+                            ..
                         } => {
                             self.emit_log(
                                 &mut writer,
@@ -235,6 +241,9 @@ impl HotPathEngine {
                 tracked_pools: self.state.len(),
                 tracked_cycles: self.graph.cycle_count(),
                 latest_block: self.state.latest_block(),
+                bellman_ford_candidates_total: 0,
+                simulated_cycles_total: 0,
+                profitable_candidates_total: 0,
             },
         )
         .await

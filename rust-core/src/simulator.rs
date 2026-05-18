@@ -10,6 +10,7 @@ pub struct SimulationConfig {
     pub max_input_share_bps: u32,
     pub optimization_steps: usize,
     pub stable_max_imbalance_bps: u32,
+    pub min_cycle_edge_profit_bps: u32,
 }
 
 impl Default for SimulationConfig {
@@ -21,11 +22,19 @@ impl Default for SimulationConfig {
             max_input_share_bps: 1_000,
             optimization_steps: 12,
             stable_max_imbalance_bps: 500,
+            min_cycle_edge_profit_bps: 0,
         }
     }
 }
 
 pub fn simulate_cycle(state: &StateStore, cycle: &Cycle, config: &SimulationConfig) -> Option<ExecutionCandidate> {
+    if config.min_cycle_edge_profit_bps > 0 {
+        let marginal_profit_bps = cycle_marginal_profit_bps(state, cycle, config)?;
+        if marginal_profit_bps < config.min_cycle_edge_profit_bps as f64 {
+            return None;
+        }
+    }
+
     let first_pool = state.get(cycle.pool_ids.first()?)?;
     let min_input = first_pool.reserve_in / config.borrow_divisor.max(1);
     let max_input = first_pool
@@ -70,6 +79,117 @@ pub fn simulate_cycle(state: &StateStore, cycle: &Cycle, config: &SimulationConf
     })
 }
 
+fn cycle_marginal_profit_bps(state: &StateStore, cycle: &Cycle, config: &SimulationConfig) -> Option<f64> {
+    let mut rate = 1.0_f64;
+    for pool_id in &cycle.pool_ids {
+        let pool = state.get(pool_id)?;
+        let pool_rate = marginal_output_rate(
+            pool.pool_kind,
+            pool.reserve_in,
+            pool.reserve_out,
+            pool.fee_bps,
+            config.stable_max_imbalance_bps,
+            pool.amp_factor.unwrap_or(100),
+        )?;
+        rate *= pool_rate;
+        if !rate.is_finite() || rate <= 0.0 {
+            return None;
+        }
+    }
+
+    Some((rate - 1.0) * 10_000.0)
+}
+
+pub fn marginal_output_rate(pool_kind: PoolKind, reserve_in: u128, reserve_out: u128, fee_bps: u32, stable_max_imbalance_bps: u32, amp_factor: u64) -> Option<f64> {
+    let rate = match pool_kind {
+        PoolKind::Xyk => exact_xyk_marginal_output_rate(reserve_in, reserve_out, fee_bps)?,
+        PoolKind::Stable => {
+            let probe_input = marginal_probe_input(reserve_in, reserve_out);
+            if probe_input == 0 {
+                return None;
+            }
+            let output = simulate_stable_swap(
+                probe_input,
+                reserve_in,
+                reserve_out,
+                fee_bps,
+                stable_max_imbalance_bps,
+                amp_factor,
+            )?;
+            if output == 0 {
+                return None;
+            }
+            output as f64 / probe_input as f64
+        }
+    };
+
+    if rate <= 0.0 || !rate.is_finite() {
+        return None;
+    }
+
+    Some(rate)
+}
+
+pub fn exact_xyk_marginal_output_rate(reserve_in: u128, reserve_out: u128, fee_bps: u32) -> Option<f64> {
+    if reserve_in == 0 || reserve_out == 0 || fee_bps >= 10_000 {
+        return None;
+    }
+
+    let fee_multiplier = (10_000 - fee_bps) as f64 / 10_000.0;
+    let rate = (reserve_out as f64 / reserve_in as f64) * fee_multiplier;
+    if rate.is_finite() && rate > 0.0 {
+        Some(rate)
+    } else {
+        None
+    }
+}
+
+pub fn exact_stable_marginal_output_rate(
+    reserve_in: u128,
+    reserve_out: u128,
+    fee_bps: u32,
+    stable_max_imbalance_bps: u32,
+    amp_factor: u64,
+) -> Option<f64> {
+    if reserve_in == 0 || reserve_out == 0 || fee_bps >= 10_000 {
+        return None;
+    }
+
+    let max_reserve = reserve_in.max(reserve_out);
+    let imbalance = reserve_in.abs_diff(reserve_out);
+    let imbalance_bps = imbalance.saturating_mul(10_000) / max_reserve;
+    if imbalance_bps > stable_max_imbalance_bps as u128 {
+        return None;
+    }
+
+    let amp = amp_factor as u128;
+    let d = compute_d(reserve_in, reserve_out, amp)?;
+    let ann = amp.checked_mul(4)?;
+
+    let x = reserve_in as f64;
+    let y = reserve_out as f64;
+    let d = d as f64;
+    let ann = ann as f64;
+    if x <= 0.0 || y <= 0.0 || d <= 0.0 || ann <= 0.0 {
+        return None;
+    }
+
+    let c = d.powi(3) / (4.0 * ann * x);
+    let numerator = y + (c / x);
+    let denominator = (2.0 * y) + x + (d / ann) - d;
+    if numerator <= 0.0 || denominator <= 0.0 {
+        return None;
+    }
+
+    let fee_multiplier = (10_000 - fee_bps) as f64 / 10_000.0;
+    let rate = (numerator / denominator) * fee_multiplier;
+    if rate.is_finite() && rate > 0.0 {
+        Some(rate)
+    } else {
+        None
+    }
+}
+
 fn simulate_input(state: &StateStore, cycle: &Cycle, amount_in: u128, config: &SimulationConfig) -> Option<u128> {
     let mut amount = amount_in;
     for pool_id in &cycle.pool_ids {
@@ -102,6 +222,15 @@ fn simulate_xyk_swap(amount_in: u128, reserve_in: u128, reserve_out: u128, fee_b
         return None;
     }
     Some(numerator / denominator)
+}
+
+fn marginal_probe_input(reserve_in: u128, reserve_out: u128) -> u128 {
+    let base = reserve_in.min(reserve_out);
+    if base == 0 {
+        return 0;
+    }
+
+    (base / 1_000_000).max(1)
 }
 
 fn simulate_stable_swap(
@@ -203,7 +332,7 @@ fn compute_d(reserve_in: u128, reserve_out: u128, amp_factor: u128) -> Option<u1
 
 #[cfg(test)]
 mod tests {
-    use super::{simulate_cycle, simulate_stable_swap, SimulationConfig};
+    use super::{exact_stable_marginal_output_rate, simulate_cycle, simulate_stable_swap, SimulationConfig};
     use crate::graph::Cycle;
     use crate::messages::{PoolKind, PoolSnapshot};
     use crate::state::StateStore;
@@ -236,6 +365,19 @@ mod tests {
     }
 
     #[test]
+    fn exact_stable_marginal_rate_is_near_par_for_balanced_pool() {
+        let rate = exact_stable_marginal_output_rate(1_000_000, 1_000_000, 4, 500, 200).expect("rate");
+        assert!(rate > 0.999);
+        assert!(rate < 1.0);
+    }
+
+    #[test]
+    fn exact_stable_marginal_rate_rejects_large_imbalance() {
+        let rate = exact_stable_marginal_output_rate(1_000_000, 1_300_000, 4, 500, 200);
+        assert!(rate.is_none());
+    }
+
+    #[test]
     fn optimization_can_use_larger_than_minimum_input() {
         let state = StateStore::default();
         seed(&state, snapshot("pool-a", PoolKind::Xyk, None, "A", "B", 10_000_000, 15_000_000, 30));
@@ -252,6 +394,22 @@ mod tests {
         let candidate = simulate_cycle(&state, &cycle, &cfg).expect("candidate");
         let minimum_input = 10_000_000 / 1_000;
         assert!(candidate.borrow_amount >= minimum_input);
+    }
+
+    #[test]
+    fn threshold_gate_rejects_weak_marginal_cycles() {
+        let state = StateStore::default();
+        seed(&state, snapshot("pool-a", PoolKind::Xyk, None, "A", "B", 1_000_000, 1_300_000, 30));
+        seed(&state, snapshot("pool-b", PoolKind::Xyk, None, "B", "C", 1_000_000, 1_300_000, 30));
+        seed(&state, snapshot("pool-c", PoolKind::Xyk, None, "C", "A", 1_000_000, 1_300_000, 30));
+
+        let cycle = cycle(["pool-a", "pool-b", "pool-c"]);
+        let cfg = SimulationConfig {
+            min_cycle_edge_profit_bps: 100_000,
+            ..config()
+        };
+
+        assert!(simulate_cycle(&state, &cycle, &cfg).is_none());
     }
 
     fn seed(state: &StateStore, snapshot: PoolSnapshot) {
@@ -273,6 +431,8 @@ mod tests {
             dex: "test".to_string(),
             pool_kind,
             amp_factor,
+            sqrt_price_x96: 0,
+            liquidity: 0,
             token_in: token_in.to_string(),
             token_out: token_out.to_string(),
             reserve_in,
@@ -296,6 +456,7 @@ mod tests {
             max_input_share_bps: 1_000,
             optimization_steps: 8,
             stable_max_imbalance_bps: 500,
+            min_cycle_edge_profit_bps: 0,
         }
     }
 }

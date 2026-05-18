@@ -1,6 +1,6 @@
 import { Contract, Interface, ZeroAddress } from "ethers";
 import { multicall3Abi, uniswapV2FactoryAbi } from "./abis.js";
-export async function expandV2Pools(provider, multicall3Address, pools) {
+export async function expandV2Pools(provider, multicall3Address, pools, cuMeter) {
     const directPools = pools.filter((pool) => pool.kind === "v2");
     const factories = pools.filter((pool) => pool.kind === "v2_factory");
     if (factories.length === 0) {
@@ -29,7 +29,7 @@ export async function expandV2Pools(provider, multicall3Address, pools) {
             }
         }
     }
-    const results = await batchRead(provider, multicall3Address, calls);
+    const results = await batchRead(provider, multicall3Address, calls, cuMeter);
     const discovered = [];
     for (let i = 0; i < results.length; i++) {
         const pair = results[i]?.[0];
@@ -61,11 +61,12 @@ export async function expandV2Pools(provider, multicall3Address, pools) {
 export function filterStablePools(pools) {
     return pools.filter((pool) => pool.kind === "stable");
 }
-async function batchRead(provider, multicall3Address, calls) {
+async function batchRead(provider, multicall3Address, calls, cuMeter) {
     if (calls.length === 0) {
         return [];
     }
     if (!multicall3Address) {
+        cuMeter?.recordMethod("eth_call", calls.length);
         return Promise.all(calls.map(async (call) => {
             const encoded = call.iface.encodeFunctionData(call.fn, call.args);
             const response = await provider.call({ to: call.target, data: encoded });
@@ -73,6 +74,7 @@ async function batchRead(provider, multicall3Address, calls) {
         }));
     }
     const multicall = new Contract(multicall3Address, multicall3Abi, provider);
+    cuMeter?.recordMethod("eth_call");
     const aggregateCalls = calls.map((call) => ({
         target: call.target,
         allowFailure: true,

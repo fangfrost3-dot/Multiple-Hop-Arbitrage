@@ -1,5 +1,6 @@
 import { Contract, Interface, JsonRpcProvider, ZeroAddress } from "ethers";
 import { multicall3Abi, uniswapV2FactoryAbi } from "./abis.js";
+import type { CuMeter } from "./cuMeter.js";
 import type { PoolConfig, StablePoolConfig, V2FactoryConfig, V2PoolConfig } from "./types.js";
 
 interface BatchCall {
@@ -13,6 +14,7 @@ export async function expandV2Pools(
   provider: JsonRpcProvider,
   multicall3Address: string | undefined,
   pools: PoolConfig[],
+  cuMeter?: CuMeter,
 ): Promise<V2PoolConfig[]> {
   const directPools = pools.filter((pool): pool is V2PoolConfig => pool.kind === "v2");
   const factories = pools.filter((pool): pool is V2FactoryConfig => pool.kind === "v2_factory");
@@ -45,7 +47,7 @@ export async function expandV2Pools(
     }
   }
 
-  const results = await batchRead(provider, multicall3Address, calls);
+  const results = await batchRead(provider, multicall3Address, calls, cuMeter);
   const discovered: V2PoolConfig[] = [];
   for (let i = 0; i < results.length; i++) {
     const pair = results[i]?.[0] as string | undefined;
@@ -84,12 +86,14 @@ async function batchRead(
   provider: JsonRpcProvider,
   multicall3Address: string | undefined,
   calls: BatchCall[],
+  cuMeter?: CuMeter,
 ): Promise<unknown[][]> {
   if (calls.length === 0) {
     return [];
   }
 
   if (!multicall3Address) {
+    cuMeter?.recordMethod("eth_call", calls.length);
     return Promise.all(
       calls.map(async (call) => {
         const encoded = call.iface.encodeFunctionData(call.fn, call.args);
@@ -100,6 +104,7 @@ async function batchRead(
   }
 
   const multicall = new Contract(multicall3Address, multicall3Abi, provider);
+  cuMeter?.recordMethod("eth_call");
   const aggregateCalls = calls.map((call) => ({
     target: call.target,
     allowFailure: true,
