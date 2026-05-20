@@ -17,8 +17,14 @@ export class PoolStream extends EventEmitter {
     subscriptions = new Map();
     stableSubscriptions = [];
     v3Subscriptions = [];
-    lastSeenBlock = new Map();
+    lastSeenLog = new Map();
+    blockHashesByPair = new Map();
     recoveringPairs = new Set();
+    reorgingPairs = new Set();
+    reorgStatus = {
+        detectedTotal: 0,
+        recoveryTotal: 0,
+    };
     lastStableReserves = new Map();
     lastV3Reserves = new Map();
     reconnectTimer;
@@ -64,6 +70,11 @@ export class PoolStream extends EventEmitter {
             this.v3PollTimer = undefined;
         }
         this.recoveryProvider = undefined;
+    }
+    status() {
+        return {
+            reorg: { ...this.reorgStatus },
+        };
     }
     async startProvider() {
         if (!this.config.WS_RPC_URL) {
@@ -153,10 +164,14 @@ export class PoolStream extends EventEmitter {
             });
             this.provider.on({ address: pair, topics: [syncTopic] }, (log) => {
                 this.cuMeter?.recordWebSocketPayload(log);
+                if (isRemovedLog(log)) {
+                    void this.handleReorg(pair, log.blockNumber, "removed log from websocket provider");
+                    return;
+                }
                 const decoded = this.syncInterface.decodeEventLog("Sync", log.data, log.topics);
                 const reserve0 = BigInt(String(decoded.reserve0));
                 const reserve1 = BigInt(String(decoded.reserve1));
-                this.handleSync(pair, reserve0, reserve1, log.blockNumber, Number(log.index));
+                this.handleSync(pair, reserve0, reserve1, log.blockNumber, Number(log.index), log.blockHash);
             });
             this.cuMeter?.recordMethod("eth_subscribe");
         }
@@ -214,17 +229,23 @@ export class PoolStream extends EventEmitter {
         }
         this.log.info({ v3Subscriptions: this.v3Subscriptions.length }, "v3 pool polling disabled after recovery snapshot");
     }
-    handleSync(pair, reserve0, reserve1, blockNumber, logIndex) {
-        const subscription = this.subscriptions.get(pair.toLowerCase());
+    handleSync(pair, reserve0, reserve1, blockNumber, logIndex, blockHash) {
+        const pairKey = pair.toLowerCase();
+        const subscription = this.subscriptions.get(pairKey);
         if (!subscription) {
             return;
         }
-        const previousBlock = this.lastSeenBlock.get(pair.toLowerCase());
+        const cursor = this.lastSeenLog.get(pairKey);
+        const previousBlock = cursor?.blockNumber;
+        if (this.detectReorg(pairKey, blockNumber, logIndex, blockHash, cursor)) {
+            void this.handleReorg(pair, blockNumber, "canonical block hash changed or live log moved behind cursor");
+            return;
+        }
         if (previousBlock !== undefined && blockNumber - previousBlock > this.config.STREAM_MAX_BLOCK_GAP) {
             this.log.error({ pair, previousBlock, blockNumber, gap: blockNumber - previousBlock }, "detected block gap in live stream; starting block replay");
             void this.replayPair(pair, previousBlock + 1, blockNumber);
         }
-        this.lastSeenBlock.set(pair.toLowerCase(), blockNumber);
+        this.recordCursor(pairKey, blockNumber, logIndex, blockHash);
         for (const oriented of subscription.orientations) {
             const tokenInIsToken0 = oriented.tokenIn === subscription.token0;
             const update = {
@@ -268,8 +289,8 @@ export class PoolStream extends EventEmitter {
             this.cuMeter?.recordMethod("eth_blockNumber");
             const reserve0 = BigInt(String(reserves.reserve0));
             const reserve1 = BigInt(String(reserves.reserve1));
-            const previousBlock = this.lastSeenBlock.get(pairKey);
-            this.lastSeenBlock.set(pairKey, blockNumber);
+            const previousBlock = this.lastSeenLog.get(pairKey)?.blockNumber;
+            this.recordCursor(pairKey, blockNumber, Number.MAX_SAFE_INTEGER);
             for (const oriented of subscription.orientations) {
                 const tokenInIsToken0 = oriented.tokenIn === subscription.token0;
                 const update = {
@@ -324,11 +345,14 @@ export class PoolStream extends EventEmitter {
                 return Number(a.index) - Number(b.index);
             });
             for (const log of logs) {
+                if (isRemovedLog(log)) {
+                    continue;
+                }
                 const decoded = this.syncInterface.decodeEventLog("Sync", log.data, log.topics);
                 const reserve0 = BigInt(String(decoded.reserve0));
                 const reserve1 = BigInt(String(decoded.reserve1));
-                this.emitReplayUpdate(subscription, reserve0, reserve1, log.blockNumber, Number(log.index), fromBlock, toBlock);
-                this.lastSeenBlock.set(pairKey, log.blockNumber);
+                this.emitReplayUpdate(subscription, reserve0, reserve1, log.blockNumber, Number(log.index), log.blockHash, fromBlock, toBlock);
+                this.recordCursor(pairKey, log.blockNumber, Number(log.index), log.blockHash);
             }
             this.log.info({ pair, fromBlock, toBlock, replayedLogs: logs.length }, "replayed pair sync logs across missed block range");
         }
@@ -340,7 +364,8 @@ export class PoolStream extends EventEmitter {
             this.recoveringPairs.delete(pairKey);
         }
     }
-    emitReplayUpdate(subscription, reserve0, reserve1, blockNumber, logIndex, fromBlock, toBlock) {
+    emitReplayUpdate(subscription, reserve0, reserve1, blockNumber, logIndex, blockHash, fromBlock, toBlock) {
+        void blockHash;
         for (const oriented of subscription.orientations) {
             const tokenInIsToken0 = oriented.tokenIn === subscription.token0;
             const update = {
@@ -358,6 +383,113 @@ export class PoolStream extends EventEmitter {
     }
     async recoverAllPairs() {
         await Promise.all([...this.subscriptions.keys()].map((pair) => this.recoverPair(pair)));
+    }
+    detectReorg(pairKey, blockNumber, logIndex, blockHash, cursor) {
+        if (!cursor) {
+            return false;
+        }
+        const knownBlockHash = blockHash ? this.blockHashesByPair.get(pairKey)?.get(blockNumber) : undefined;
+        if (knownBlockHash && knownBlockHash !== blockHash) {
+            return true;
+        }
+        if (blockNumber < cursor.blockNumber) {
+            return true;
+        }
+        if (blockNumber === cursor.blockNumber && logIndex <= cursor.logIndex) {
+            return Boolean(blockHash && cursor.blockHash && blockHash !== cursor.blockHash);
+        }
+        return false;
+    }
+    recordCursor(pairKey, blockNumber, logIndex, blockHash) {
+        this.lastSeenLog.set(pairKey, { blockNumber, blockHash, logIndex });
+        if (!blockHash) {
+            return;
+        }
+        const hashes = this.blockHashesByPair.get(pairKey) ?? new Map();
+        hashes.set(blockNumber, blockHash);
+        const keepFromBlock = blockNumber - Math.max(this.config.STREAM_REORG_LOOKBACK_BLOCKS * 2, 24);
+        for (const knownBlock of hashes.keys()) {
+            if (knownBlock < keepFromBlock) {
+                hashes.delete(knownBlock);
+            }
+        }
+        this.blockHashesByPair.set(pairKey, hashes);
+    }
+    async handleReorg(pair, observedBlock, reason) {
+        const pairKey = pair.toLowerCase();
+        if (this.reorgingPairs.has(pairKey)) {
+            return;
+        }
+        this.reorgingPairs.add(pairKey);
+        this.reorgStatus.detectedTotal += 1;
+        this.reorgStatus.lastDetectedAt = Date.now();
+        this.reorgStatus.lastPair = pair;
+        this.reorgStatus.lastReason = reason;
+        this.emit("reorg", {
+            pair,
+            observedBlock,
+            reason,
+            detectedAt: this.reorgStatus.lastDetectedAt,
+        });
+        try {
+            const cursor = this.lastSeenLog.get(pairKey);
+            const anchorBlock = Math.min(observedBlock, cursor?.blockNumber ?? observedBlock);
+            const fromBlock = Math.max(0, anchorBlock - this.config.STREAM_REORG_LOOKBACK_BLOCKS);
+            const head = this.recoveryProvider ? await this.recoveryProvider.getBlockNumber() : observedBlock;
+            this.cuMeter?.recordMethod("eth_blockNumber");
+            this.reorgStatus.lastFromBlock = fromBlock;
+            this.reorgStatus.lastToBlock = head;
+            this.log.error({ pair, observedBlock, fromBlock, head, reason }, "detected pool stream reorg; recovering canonical reserves");
+            this.lastSeenLog.delete(pairKey);
+            this.blockHashesByPair.delete(pairKey);
+            await this.replayPair(pair, fromBlock, head);
+            await this.recoverPairSnapshotWithSource(pair, "reorg_recovery", fromBlock, head);
+            this.reorgStatus.recoveryTotal += 1;
+            this.reorgStatus.lastRecoveredAt = Date.now();
+        }
+        catch (error) {
+            this.log.error({ pair, observedBlock, reason, error }, "pool stream reorg recovery failed");
+        }
+        finally {
+            this.reorgingPairs.delete(pairKey);
+        }
+    }
+    async recoverPairSnapshotWithSource(pair, source, replayFromBlock, replayToBlock) {
+        const pairKey = pair.toLowerCase();
+        if (!this.recoveryProvider) {
+            this.log.error({ pair }, "cannot recover pair without RPC provider");
+            return;
+        }
+        const subscription = this.subscriptions.get(pairKey);
+        if (!subscription) {
+            return;
+        }
+        try {
+            const contract = new Contract(pair, uniswapV2PairAbi, this.recoveryProvider);
+            const [reserves, blockNumber] = await Promise.all([contract.getReserves(), this.recoveryProvider.getBlockNumber()]);
+            this.cuMeter?.recordMethod("eth_call");
+            this.cuMeter?.recordMethod("eth_blockNumber");
+            const reserve0 = BigInt(String(reserves.reserve0));
+            const reserve1 = BigInt(String(reserves.reserve1));
+            this.recordCursor(pairKey, blockNumber, Number.MAX_SAFE_INTEGER);
+            for (const oriented of subscription.orientations) {
+                const tokenInIsToken0 = oriented.tokenIn === subscription.token0;
+                const update = {
+                    pool_id: oriented.poolId,
+                    reserve_in: (tokenInIsToken0 ? reserve0 : reserve1).toString(),
+                    reserve_out: (tokenInIsToken0 ? reserve1 : reserve0).toString(),
+                    block_number: blockNumber,
+                    log_index: Number.MAX_SAFE_INTEGER,
+                    source,
+                    replay_from_block: replayFromBlock,
+                    replay_to_block: replayToBlock ?? blockNumber,
+                };
+                this.emit("pool_update", update);
+            }
+        }
+        catch (error) {
+            this.log.error({ pair, error }, "pair reserve recovery failed");
+        }
     }
     async pollStablePools(blockNumber, source) {
         if (!this.recoveryProvider) {
@@ -522,4 +654,7 @@ function estimateV3Reserves(sqrtPriceX96, liquidity) {
     const reserveIn = liquidity * q96 / sqrtPriceX96;
     const reserveOut = liquidity * sqrtPriceX96 / q96;
     return [reserveIn, reserveOut];
+}
+function isRemovedLog(log) {
+    return Boolean(log.removed);
 }

@@ -1,0 +1,58 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-6f3d938604710992ca77d8a94016173612cac69a",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.4.0"
+  },
+  "userSourceNameMap": {
+    "contracts/adapters/OneInchAdapter.sol": "project/contracts/adapters/OneInchAdapter.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/adapters/OneInchAdapter.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\nimport {IDexAdapter} from \"../interfaces/IDexAdapter.sol\";\nimport {IERC20} from \"../interfaces/IERC20.sol\";\nimport {SafeERC20} from \"../libraries/SafeERC20.sol\";\n\ncontract OneInchAdapter is IDexAdapter {\n  using SafeERC20 for address;\n\n  struct RouteData {\n    address router;\n    bytes data;\n  }\n\n  error InvalidRouter();\n  error NativeValueNotSupported();\n  error RouterCallFailed(bytes reason);\n  error InsufficientOutput(uint256 amountOut);\n\n  function executeSwap(\n    address tokenIn,\n    address tokenOut,\n    uint256 amountIn,\n    bytes calldata routeData\n  ) external override returns (uint256 amountOut) {\n    RouteData memory route = abi.decode(routeData, (RouteData));\n    if (route.router == address(0)) {\n      revert InvalidRouter();\n    }\n\n    tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);\n    tokenIn.forceApprove(route.router, amountIn);\n\n    uint256 receiverBalanceBefore = IERC20(tokenOut).balanceOf(msg.sender);\n    (bool success, bytes memory result) = route.router.call(route.data);\n    tokenIn.forceApprove(route.router, 0);\n    if (!success) {\n      revert RouterCallFailed(result);\n    }\n    if (address(this).balance != 0) {\n      revert NativeValueNotSupported();\n    }\n\n    uint256 receiverBalanceAfter = IERC20(tokenOut).balanceOf(msg.sender);\n    amountOut = receiverBalanceAfter - receiverBalanceBefore;\n    if (amountOut == 0) {\n      revert InsufficientOutput(amountOut);\n    }\n  }\n}\n"
+      },
+      "project/contracts/interfaces/IDexAdapter.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IDexAdapter {\n  function executeSwap(\n    address tokenIn,\n    address tokenOut,\n    uint256 amountIn,\n    bytes calldata routeData\n  ) external returns (uint256 amountOut);\n}\n"
+      },
+      "project/contracts/interfaces/IERC20.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ninterface IERC20 {\n  function balanceOf(address account) external view returns (uint256);\n\n  function allowance(address owner, address spender) external view returns (uint256);\n\n  function transfer(address to, uint256 value) external returns (bool);\n\n  function approve(address spender, uint256 value) external returns (bool);\n\n  function transferFrom(address from, address to, uint256 value) external returns (bool);\n}\n"
+      },
+      "project/contracts/libraries/SafeERC20.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\nlibrary SafeERC20 {\n  error ERC20CallFailed(address token, bytes data);\n\n  function safeTransfer(address token, address to, uint256 value) internal {\n    _callOptionalReturn(token, abi.encodeWithSignature(\"transfer(address,uint256)\", to, value));\n  }\n\n  function safeTransferFrom(address token, address from, address to, uint256 value) internal {\n    _callOptionalReturn(token, abi.encodeWithSignature(\"transferFrom(address,address,uint256)\", from, to, value));\n  }\n\n  function safeApprove(address token, address spender, uint256 value) internal {\n    _callOptionalReturn(token, abi.encodeWithSignature(\"approve(address,uint256)\", spender, value));\n  }\n\n  function forceApprove(address token, address spender, uint256 value) internal {\n    if (value == 0) {\n      (bool zeroSuccess, bytes memory zeroResult) = token.call(abi.encodeWithSignature(\"approve(address,uint256)\", spender, 0));\n      if (!zeroSuccess || (zeroResult.length != 0 && !abi.decode(zeroResult, (bool)))) {\n        revert ERC20CallFailed(token, abi.encodeWithSignature(\"approve(address,uint256)\", spender, 0));\n      }\n      return;\n    }\n\n    (bool success, bytes memory result) = token.call(abi.encodeWithSignature(\"approve(address,uint256)\", spender, value));\n    if (success && (result.length == 0 || abi.decode(result, (bool)))) {\n      return;\n    }\n\n    safeApprove(token, spender, 0);\n    safeApprove(token, spender, value);\n  }\n\n  function _callOptionalReturn(address token, bytes memory data) private {\n    (bool success, bytes memory result) = token.call(data);\n    if (!success || (result.length != 0 && !abi.decode(result, (bool)))) {\n      revert ERC20CallFailed(token, data);\n    }\n  }\n}\n"
+      }
+    }
+  }
+}

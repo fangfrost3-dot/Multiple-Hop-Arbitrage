@@ -144,15 +144,34 @@ if (config.EXECUTOR_KILL_SWITCH_PATH) {
   }, 5_000).unref();
 }
 
+const jsonHeaders = {
+  "content-type": "application/json",
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET,POST,OPTIONS",
+  "access-control-allow-headers": "content-type",
+};
+const textHeaders = {
+  "content-type": "text/plain; version=0.0.4",
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET,POST,OPTIONS",
+  "access-control-allow-headers": "content-type",
+};
+
 createServer((request, response) => {
+  if (request.method === "OPTIONS") {
+    response.writeHead(204, jsonHeaders);
+    response.end();
+    return;
+  }
+
   if (request.url === "/healthz") {
-    response.writeHead(200, { "content-type": "application/json" });
+    response.writeHead(200, jsonHeaders);
     response.end(JSON.stringify({ ok: true, ...statusPayload() }));
     return;
   }
 
   if (request.url === "/status") {
-    response.writeHead(200, { "content-type": "application/json" });
+    response.writeHead(200, jsonHeaders);
     response.end(JSON.stringify(statusPayload()));
     return;
   }
@@ -223,6 +242,12 @@ createServer((request, response) => {
       "# HELP rn_stream_public_block_lag Public RPC head minus last forwarded pool update block.",
       "# TYPE rn_stream_public_block_lag gauge",
       `rn_stream_public_block_lag ${stream.publicBlockLag ?? 0}`,
+      "# HELP rn_stream_reorg_detected_total Pool stream reorgs detected.",
+      "# TYPE rn_stream_reorg_detected_total counter",
+      `rn_stream_reorg_detected_total ${stream.reorg.detectedTotal}`,
+      "# HELP rn_stream_reorg_recovery_total Pool stream reorg recoveries completed.",
+      "# TYPE rn_stream_reorg_recovery_total counter",
+      `rn_stream_reorg_recovery_total ${stream.reorg.recoveryTotal}`,
       "# HELP rn_rpc_public_healthy Whether the public RPC probe is healthy.",
       "# TYPE rn_rpc_public_healthy gauge",
       `rn_rpc_public_healthy ${rpc.publicRpc.healthy ? 1 : 0}`,
@@ -264,18 +289,18 @@ createServer((request, response) => {
       `rn_alchemy_websocket_events_total ${cu.websocketEvents}`,
     ];
 
-    response.writeHead(200, { "content-type": "text/plain; version=0.0.4" });
+    response.writeHead(200, textHeaders);
     response.end(`${lines.join("\n")}\n`);
     return;
   }
 
   if (request.method === "POST" && request.url === "/resume") {
     void executor.resume().then(() => {
-      response.writeHead(202, { "content-type": "application/json" });
+      response.writeHead(202, jsonHeaders);
       response.end(JSON.stringify({ ok: true, executor: executor.status() }));
     }).catch((error: unknown) => {
       log.error({ error }, "executor resume failed");
-      response.writeHead(500, { "content-type": "application/json" });
+      response.writeHead(500, jsonHeaders);
       response.end(JSON.stringify({ ok: false }));
     });
     return;
@@ -283,17 +308,17 @@ createServer((request, response) => {
 
   if (request.method === "POST" && request.url === "/pause") {
     void executor.pauseManual("manual pause via HTTP").then(() => {
-      response.writeHead(202, { "content-type": "application/json" });
+      response.writeHead(202, jsonHeaders);
       response.end(JSON.stringify({ ok: true, executor: executor.status() }));
     }).catch((error: unknown) => {
       log.error({ error }, "executor pause failed");
-      response.writeHead(500, { "content-type": "application/json" });
+      response.writeHead(500, jsonHeaders);
       response.end(JSON.stringify({ ok: false }));
     });
     return;
   }
 
-  response.writeHead(404, { "content-type": "application/json" });
+  response.writeHead(404, jsonHeaders);
   response.end(JSON.stringify({ error: "not found" }));
 }).listen(config.METRICS_PORT, () => {
   log.info({ port: config.METRICS_PORT }, "metrics server listening");
@@ -331,6 +356,7 @@ function streamStatus(rpc: ReturnType<RpcMonitor["snapshot"]>) {
     lastUpdateSource: streamStats.lastUpdateSource || undefined,
     lastUpdatePoolId: streamStats.lastUpdatePoolId || undefined,
     publicBlockLag,
+    ...stream.status(),
   };
 }
 

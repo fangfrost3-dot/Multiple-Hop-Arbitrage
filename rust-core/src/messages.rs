@@ -70,6 +70,7 @@ pub enum UpdateSource {
     Live,
     Recovery,
     ReconnectRecovery,
+    ReorgRecovery,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -20,7 +20,7 @@ export interface PoolUpdate {
   log_index?: number;
   sqrt_price_x96?: string;
   liquidity?: string;
-  source?: "live" | "recovery" | "reconnect_recovery";
+  source?: "live" | "recovery" | "reconnect_recovery" | "reorg_recovery";
   replay_from_block?: number;
   replay_to_block?: number;
 }
@@ -50,6 +50,9 @@ export interface ExecutionRecord {
   profitRecipientBalanceBefore?: string;
   routeHops: number;
   gasLimit: string;
+  estimatedGasCostWei?: string;
+  estimatedL2GasCostWei?: string;
+  estimatedL1CalldataFeeWei?: string;
   maxFeePerGas?: string;
   maxPriorityFeePerGas?: string;
   gasPrice?: string;

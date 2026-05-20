@@ -29,6 +29,7 @@ const METHOD_CU: Record<string, number> = {
   eth_getCode: 20,
   eth_call: 26,
   eth_estimateGas: 20,
+  arb_gasEstimateComponents: 20,
   eth_sendRawTransaction: 40,
   eth_getLogs: 60,
 };

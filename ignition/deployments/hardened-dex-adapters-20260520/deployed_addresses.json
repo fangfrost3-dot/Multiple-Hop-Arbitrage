@@ -1,0 +1,5 @@
+{
+  "DexAdaptersModule#OneInchAdapter": "0xeB57536e1Cb30A50791ee3B472A9a1F47D58dcB0",
+  "DexAdaptersModule#UniswapV2Adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+  "DexAdaptersModule#UniswapV3Adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87"
+}

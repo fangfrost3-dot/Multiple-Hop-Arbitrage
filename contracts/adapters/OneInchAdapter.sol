@@ -3,8 +3,11 @@ pragma solidity ^0.8.28;
 
 import {IDexAdapter} from "../interfaces/IDexAdapter.sol";
 import {IERC20} from "../interfaces/IERC20.sol";
+import {SafeERC20} from "../libraries/SafeERC20.sol";
 
 contract OneInchAdapter is IDexAdapter {
+  using SafeERC20 for address;
+
   struct RouteData {
     address router;
     bytes data;
@@ -13,6 +16,7 @@ contract OneInchAdapter is IDexAdapter {
   error InvalidRouter();
   error NativeValueNotSupported();
   error RouterCallFailed(bytes reason);
+  error InsufficientOutput(uint256 amountOut);
 
   function executeSwap(
     address tokenIn,
@@ -25,11 +29,12 @@ contract OneInchAdapter is IDexAdapter {
       revert InvalidRouter();
     }
 
-    IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-    IERC20(tokenIn).approve(route.router, amountIn);
+    tokenIn.safeTransferFrom(msg.sender, address(this), amountIn);
+    tokenIn.forceApprove(route.router, amountIn);
 
     uint256 receiverBalanceBefore = IERC20(tokenOut).balanceOf(msg.sender);
     (bool success, bytes memory result) = route.router.call(route.data);
+    tokenIn.forceApprove(route.router, 0);
     if (!success) {
       revert RouterCallFailed(result);
     }
@@ -39,5 +44,8 @@ contract OneInchAdapter is IDexAdapter {
 
     uint256 receiverBalanceAfter = IERC20(tokenOut).balanceOf(msg.sender);
     amountOut = receiverBalanceAfter - receiverBalanceBefore;
+    if (amountOut == 0) {
+      revert InsufficientOutput(amountOut);
+    }
   }
 }

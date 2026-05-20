@@ -66,6 +66,8 @@ export class ExecutorClient {
     maxTotalFailures;
     maxCumulativeEstimatedLossWei;
     wrappedNativeToken;
+    arbitrumNodeInterfaceAddress;
+    arbitrumL1FeePaddingBps;
     maxGasCostWei;
     confirmations;
     replacementBumpBps;
@@ -176,6 +178,8 @@ export class ExecutorClient {
         this.maxTotalFailures = config.EXECUTOR_MAX_TOTAL_FAILURES;
         this.maxCumulativeEstimatedLossWei = config.EXECUTOR_MAX_CUMULATIVE_ESTIMATED_LOSS_WEI;
         this.wrappedNativeToken = config.WRAPPED_NATIVE_TOKEN?.toLowerCase();
+        this.arbitrumNodeInterfaceAddress = config.ARBITRUM_NODE_INTERFACE_ADDRESS;
+        this.arbitrumL1FeePaddingBps = BigInt(config.ARBITRUM_L1_FEE_PADDING_BPS);
         this.maxGasCostWei = config.MAX_GAS_COST_WEI;
         this.confirmations = config.EXECUTOR_CONFIRMATIONS;
         this.replacementBumpBps = BigInt(config.EXECUTOR_REPLACEMENT_BUMP_BPS);
@@ -313,19 +317,25 @@ export class ExecutorClient {
             this.log.info({ cycleId: candidate.cycle_id }, "no signer configured for execution submission");
             return;
         }
-        const gasEstimate = await this.getGasEstimate(candidate.cycle_id, estimationAddress, calldata);
         const feeData = await this.getCachedFeeData();
-        const rpcPrepMs = mark();
         const gasPrice = feeData.maxFeePerGas ?? feeData.gasPrice;
         if (!gasPrice) {
             this.log.error({ cycleId: candidate.cycle_id }, "missing gas price data");
             return;
         }
-        const estimatedGasCostWei = gasEstimate * gasPrice;
+        const gasCost = await this.getGasCostEstimate(candidate.cycle_id, estimationAddress, calldata, gasPrice);
+        const rpcPrepMs = mark();
+        const estimatedGasCostWei = gasCost.totalGasCostWei;
         if (this.maxGasCostWei > 0n && estimatedGasCostWei > this.maxGasCostWei) {
             const reason = "candidate rejected above max gas cost gate";
             this.metrics.riskRejected += 1;
-            this.log.info({ cycleId: candidate.cycle_id, estimatedGasCostWei: estimatedGasCostWei.toString(), maxGasCostWei: this.maxGasCostWei.toString() }, reason);
+            this.log.info({
+                cycleId: candidate.cycle_id,
+                estimatedGasCostWei: estimatedGasCostWei.toString(),
+                estimatedL2GasCostWei: gasCost.l2GasCostWei.toString(),
+                estimatedL1CalldataFeeWei: gasCost.l1CalldataFeeWei.toString(),
+                maxGasCostWei: this.maxGasCostWei.toString(),
+            }, reason);
             await this.writeJournal({
                 timestamp: Date.now(),
                 event: "risk_rejected",
@@ -337,6 +347,8 @@ export class ExecutorClient {
                 routeHops,
                 details: {
                     estimatedGasCostWei: estimatedGasCostWei.toString(),
+                    estimatedL2GasCostWei: gasCost.l2GasCostWei.toString(),
+                    estimatedL1CalldataFeeWei: gasCost.l1CalldataFeeWei.toString(),
                     maxGasCostWei: this.maxGasCostWei.toString(),
                 },
             });
@@ -351,6 +363,8 @@ export class ExecutorClient {
                     cycleId: candidate.cycle_id,
                     expectedProfit: candidate.expected_profit,
                     estimatedGasCostWei: estimatedGasCostWei.toString(),
+                    estimatedL2GasCostWei: gasCost.l2GasCostWei.toString(),
+                    estimatedL1CalldataFeeWei: gasCost.l1CalldataFeeWei.toString(),
                     requiredProfit: requiredProfit.toString(),
                 }, reason);
                 await this.writeJournal({
@@ -364,6 +378,8 @@ export class ExecutorClient {
                     routeHops,
                     details: {
                         estimatedGasCostWei: estimatedGasCostWei.toString(),
+                        estimatedL2GasCostWei: gasCost.l2GasCostWei.toString(),
+                        estimatedL1CalldataFeeWei: gasCost.l1CalldataFeeWei.toString(),
                         effectiveMinProfit: effectiveMinProfit.toString(),
                         requiredProfit: requiredProfit.toString(),
                     },
@@ -374,7 +390,7 @@ export class ExecutorClient {
         const txRequest = {
             to: this.contractAddress,
             data: calldata,
-            gasLimit: (gasEstimate * 12n) / 10n,
+            gasLimit: (gasCost.gasLimit * 12n) / 10n,
             maxFeePerGas: feeData.maxFeePerGas ?? undefined,
             maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
             gasPrice: feeData.maxFeePerGas ? undefined : gasPrice,
@@ -399,6 +415,9 @@ export class ExecutorClient {
             profitRecipientBalanceBefore: profitRecipientBalanceBefore?.toString(),
             routeHops,
             gasLimit: String(txRequest.gasLimit ?? 0n),
+            estimatedGasCostWei: estimatedGasCostWei.toString(),
+            estimatedL2GasCostWei: gasCost.l2GasCostWei.toString(),
+            estimatedL1CalldataFeeWei: gasCost.l1CalldataFeeWei.toString(),
             maxFeePerGas: txRequest.maxFeePerGas ? String(txRequest.maxFeePerGas) : undefined,
             maxPriorityFeePerGas: txRequest.maxPriorityFeePerGas ? String(txRequest.maxPriorityFeePerGas) : undefined,
             gasPrice: txRequest.gasPrice ? String(txRequest.gasPrice) : undefined,
@@ -436,6 +455,9 @@ export class ExecutorClient {
             details: {
                 submissionTarget: execution.submissionTarget,
                 gasLimit: execution.gasLimit,
+                estimatedGasCostWei: execution.estimatedGasCostWei,
+                estimatedL2GasCostWei: execution.estimatedL2GasCostWei,
+                estimatedL1CalldataFeeWei: execution.estimatedL1CalldataFeeWei,
                 maxFeePerGas: execution.maxFeePerGas,
                 maxPriorityFeePerGas: execution.maxPriorityFeePerGas,
                 gasPrice: execution.gasPrice,
@@ -511,24 +533,63 @@ export class ExecutorClient {
         }
         return this.abiCoder.encode(["tuple(address router,bytes data)"], [[swap.router, quote.tx.data]]);
     }
-    async getGasEstimate(cycleId, from, calldata) {
+    async getGasCostEstimate(cycleId, from, calldata, gasPriceWei) {
         const now = Date.now();
         const cacheKey = `${cycleId}:${calldata}`;
         const cached = this.gasEstimateCache.get(cacheKey);
         if (cached && now - cached.updatedAt <= ExecutorClient.GAS_ESTIMATE_TTL_MS) {
-            return cached.gasEstimate;
+            return this.toGasCostEstimate(cached.gasEstimate, cached.l1CalldataGas, gasPriceWei);
         }
         if (!this.provider || !this.contractAddress) {
             throw new Error("provider or contract address missing for gas estimation");
         }
-        const gasEstimate = await this.provider.estimateGas({
+        const tx = {
             to: this.contractAddress,
             from,
             data: calldata,
-        });
+        };
+        const gasEstimate = await this.provider.estimateGas(tx);
         this.cuMeter?.recordMethod("eth_estimateGas");
-        this.gasEstimateCache.set(cacheKey, { gasEstimate, updatedAt: now });
-        return gasEstimate;
+        const l1CalldataGas = await this.estimateArbitrumL1CalldataGas(tx);
+        this.gasEstimateCache.set(cacheKey, { gasEstimate, l1CalldataGas, updatedAt: now });
+        return this.toGasCostEstimate(gasEstimate, l1CalldataGas, gasPriceWei);
+    }
+    toGasCostEstimate(gasEstimate, l1CalldataGas, gasPriceWei) {
+        const boundedL1CalldataGas = l1CalldataGas > gasEstimate ? gasEstimate : l1CalldataGas;
+        const l2Gas = gasEstimate - boundedL1CalldataGas;
+        const paddedL1CalldataGas = this.arbitrumL1FeePaddingBps > 0n
+            ? (boundedL1CalldataGas * (10000n + this.arbitrumL1FeePaddingBps)) / 10000n
+            : boundedL1CalldataGas;
+        const l2GasCostWei = l2Gas * gasPriceWei;
+        const l1CalldataFeeWei = paddedL1CalldataGas * gasPriceWei;
+        return {
+            gasLimit: l2Gas + paddedL1CalldataGas,
+            l2GasCostWei,
+            l1CalldataFeeWei,
+            totalGasCostWei: l2GasCostWei + l1CalldataFeeWei,
+        };
+    }
+    async estimateArbitrumL1CalldataGas(tx) {
+        if (!this.provider || !this.arbitrumNodeInterfaceAddress) {
+            return 0n;
+        }
+        const iface = new Interface([
+            "function gasEstimateComponents(address to,bool contractCreation,bytes data) view returns (uint64 gasEstimate,uint64 gasEstimateForL1,uint256 baseFee,uint256 l1BaseFeeEstimate)",
+        ]);
+        try {
+            const response = await this.provider.call({
+                to: this.arbitrumNodeInterfaceAddress,
+                from: tx.from,
+                data: iface.encodeFunctionData("gasEstimateComponents", [tx.to, false, tx.data]),
+            });
+            this.cuMeter?.recordMethod("arb_gasEstimateComponents");
+            const decoded = iface.decodeFunctionResult("gasEstimateComponents", response);
+            return BigInt(String(decoded.gasEstimateForL1));
+        }
+        catch (error) {
+            this.log.error({ error }, "arbitrum l1 calldata fee estimate failed; falling back to l2 gas estimate only");
+            return 0n;
+        }
     }
     async getCachedFeeData() {
         const now = Date.now();

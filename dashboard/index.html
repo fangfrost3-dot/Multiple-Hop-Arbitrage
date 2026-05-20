@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arb Bot Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14; --bg2: #141720; --bg3: #1c2030;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0; --text2: #7c8299; --text3: #4a5068;
+    --green: #1d9e75; --green2: #5dcaa5; --amber: #ef9f27;
+    --red: #e24b4a; --blue: #378add; --mono: "JetBrains Mono", Consolas, monospace;
+    --sans: Inter, system-ui, sans-serif; --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px 20px; min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .brand span { color: var(--green2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex: 0 0 auto; }
+  .dot.ok { background: var(--green); box-shadow: 0 0 12px rgba(29,158,117,.6); }
+  .dot.warn { background: var(--amber); }
+  .dot.bad { background: var(--red); }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .badge { font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border2); color: var(--text2); }
+  .badge.ok { color: var(--green2); border-color: rgba(29,158,117,.45); background: rgba(29,158,117,.1); }
+  .badge.warn { color: var(--amber); border-color: rgba(239,159,39,.45); background: rgba(239,159,39,.1); }
+  .badge.bad { color: var(--red); border-color: rgba(226,75,74,.45); background: rgba(226,75,74,.1); }
+  .bar, .card, .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); }
+  .bar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin-bottom: 14px; font-family: var(--mono); font-size: 11px; }
+  .bar input { width: min(460px, 100%); flex: 1; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 7px 9px; font-family: var(--mono); outline: none; }
+  button { background: transparent; border: 1px solid var(--border2); color: var(--text); border-radius: 7px; padding: 7px 12px; font-family: var(--mono); font-size: 11px; cursor: pointer; }
+  button:hover { background: var(--bg3); }
+  button.danger { color: var(--red); border-color: rgba(226,75,74,.45); }
+  button.primary { color: var(--green2); border-color: rgba(29,158,117,.45); }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .metric { padding: 12px 14px; }
+  .label { color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; margin-bottom: 6px; }
+  .value { font-family: var(--mono); font-size: 21px; font-weight: 700; line-height: 1; overflow-wrap: anywhere; }
+  .sub { color: var(--text2); font-family: var(--mono); font-size: 10px; margin-top: 6px; }
+  .okText { color: var(--green2); } .warnText { color: var(--amber); } .badText { color: var(--red); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } }
+  .card { padding: 14px 16px; min-height: 150px; }
+  .title { display: flex; justify-content: space-between; gap: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; margin-bottom: 13px; }
+  .rows { display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
+  .track { height: 5px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .fill { height: 100%; background: var(--blue); border-radius: 99px; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; min-width: 620px; }
+  th { color: var(--text3); text-transform: uppercase; letter-spacing: .06em; font-weight: 400; padding: 0 10px 10px 0; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border); }
+  .tableWrap { overflow-x: auto; }
+  .chart { height: 140px; }
+  .log { height: 170px; overflow: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: var(--mono); font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+  .logLine { display: flex; gap: 10px; }
+  .time { color: var(--text3); min-width: 68px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><div id="mainDot" class="dot"></div><div>Arb<span>Bot</span> Dashboard</div></div>
+    <div class="badges">
+      <span id="pausedBadge" class="badge">paused: —</span>
+      <span id="bootBadge" class="badge">bootstrap: —</span>
+      <span id="blockBadge" class="badge">block —</span>
+      <span id="timeBadge" class="badge">—</span>
+    </div>
+  </div>
+
+  <div class="bar">
+    <span>Status URL</span>
+    <input id="baseUrl" value="http://127.0.0.1:9090" spellcheck="false" />
+    <button onclick="refreshNow()">Refresh</button>
+    <button class="primary" onclick="unpauseExecutor()">Unpause Executor</button>
+    <button class="danger" onclick="pauseExecutor()">Pause Executor</button>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="label">Executor</div><div id="paused" class="value">—</div><div id="pauseReason" class="sub">—</div></div>
+    <div class="metric"><div class="label">Pools / Cycles</div><div id="pools" class="value">—</div><div id="engineBlock" class="sub">engine block —</div></div>
+    <div class="metric"><div class="label">RPC latency</div><div id="rpcLatency" class="value">—</div><div id="rpcBlock" class="sub">rpc block —</div></div>
+    <div class="metric"><div class="label">Stream updates</div><div id="streamUpdates" class="value">—</div><div id="streamAge" class="sub">age —</div></div>
+    <div class="metric"><div class="label">Alchemy CU/mo</div><div id="cuMonth" class="value">—</div><div id="cuTotal" class="sub">total —</div></div>
+    <div class="metric"><div class="label">Reorgs</div><div id="reorgs" class="value">—</div><div id="reorgSub" class="sub">recoveries —</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="title"><span>RPC Health</span><span id="rpcUpdated">—</span></div>
+      <div id="rpcRows" class="rows"></div>
+    </div>
+    <div class="card">
+      <div class="title"><span>Execution Metrics</span><span id="execUpdated">—</span></div>
+      <div id="execRows" class="rows"></div>
+    </div>
+  </div>
+
+  <div class="card tableWrap" style="margin-bottom:14px">
+    <div class="title"><span>Control Plane</span><span id="controlUpdated">—</span></div>
+    <table>
+      <thead><tr><th>Subsystem</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody id="systemRows"></tbody>
+    </table>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><div class="title"><span>RPC Latency</span><span>ms</span></div><div class="chart"><canvas id="latencyChart"></canvas></div></div>
+    <div class="card"><div class="title"><span>CU Burn</span><span>per hour</span></div><div class="chart"><canvas id="cuChart"></canvas></div></div>
+  </div>
+
+  <div class="card">
+    <div class="title"><span>Log</span><button onclick="clearLog()">Clear</button></div>
+    <div id="log" class="log"></div>
+  </div>
+
+<script>
+const latencyHistory = Array(40).fill(null);
+const cuHistory = Array(40).fill(null);
+let lastStreamUpdates = 0;
+let logs = [];
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { display: false },
+    y: { ticks: { color: "#4a5068", font: { size: 10, family: "monospace" } }, grid: { color: "rgba(255,255,255,.04)" } },
+  },
+};
+const latencyChart = new Chart(document.getElementById("latencyChart"), {
+  type: "line",
+  data: { labels: latencyHistory.map((_, i) => i), datasets: [{ data: latencyHistory, borderColor: "#378add", borderWidth: 1.5, pointRadius: 0, tension: .35 }] },
+  options: chartOptions,
+});
+const cuChart = new Chart(document.getElementById("cuChart"), {
+  type: "line",
+  data: { labels: cuHistory.map((_, i) => i), datasets: [{ data: cuHistory, borderColor: "#5dcaa5", borderWidth: 1.5, pointRadius: 0, tension: .35 }] },
+  options: chartOptions,
+});
+
+function baseUrl() {
+  return document.getElementById("baseUrl").value.replace(/\/$/, "");
+}
+
+function fmt(n) {
+  if (n === undefined || n === null || Number.isNaN(Number(n))) return "—";
+  return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function cls(ok, warn = false) {
+  return ok ? "okText" : warn ? "warnText" : "badText";
+}
+
+function setText(id, value, klass) {
+  const el = document.getElementById(id);
+  el.textContent = value;
+  el.className = klass ? `value ${klass}` : "value";
+}
+
+function addLog(msg, type = "info") {
+  const now = new Date();
+  const t = [now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2, "0")).join(":");
+  logs.unshift({ t, msg, type });
+  logs = logs.slice(0, 100);
+  renderLog();
+}
+
+function renderLog() {
+  document.getElementById("log").innerHTML = logs.slice(0, 60).map(l => {
+    const color = l.type === "ok" ? "okText" : l.type === "warn" ? "warnText" : l.type === "bad" ? "badText" : "";
+    return `<div class="logLine"><span class="time">${l.t}</span><span class="${color}">${escapeHtml(l.msg)}</span></div>`;
+  }).join("");
+}
+
+function clearLog() {
+  logs = [];
+  renderLog();
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function postControl(action) {
+  try {
+    const res = await fetch(`${baseUrl()}/${action}`, { method: "POST" });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    addLog(`${action} accepted`, "ok");
+    await refreshNow();
+  } catch (err) {
+    addLog(`${action} failed: ${err.message}`, "bad");
+  }
+}
+
+function unpauseExecutor() {
+  const ok = confirm(
+    "Unpause executor and allow live transaction submission?\n\nOnly continue if bootstrap is ready, pools/cycles are loaded, RPC is healthy, and risk caps are set.",
+  );
+  if (!ok) {
+    addLog("unpause cancelled by user", "warn");
+    return;
+  }
+  void postControl("resume");
+}
+
+function pauseExecutor() {
+  void postControl("pause");
+}
+
+async function refreshNow() {
+  try {
+    const [statusRes, metricsRes] = await Promise.all([
+      fetch(`${baseUrl()}/status`),
+      fetch(`${baseUrl()}/metrics`),
+    ]);
+    if (!statusRes.ok) throw new Error(`/status ${statusRes.status}`);
+    const status = await statusRes.json();
+    const metricsText = metricsRes.ok ? await metricsRes.text() : "";
+    renderStatus(status, parseMetrics(metricsText));
+  } catch (err) {
+    document.getElementById("mainDot").className = "dot bad";
+    addLog(`status fetch failed: ${err.message}`, "bad");
+  }
+}
+
+function parseMetrics(text) {
+  const out = {};
+  for (const line of text.split("\n")) {
+    if (!line || line.startsWith("#")) continue;
+    const [key, value] = line.trim().split(/\s+/);
+    out[key] = Number(value);
+  }
+  return out;
+}
+
+function renderStatus(s, m) {
+  const paused = Boolean(s.executor?.paused);
+  const rpc = s.rpc?.publicRpc ?? {};
+  const stream = s.stream ?? {};
+  const cu = s.alchemyCu ?? {};
+  const exec = s.executor?.metrics ?? {};
+  const boot = s.controlPlane?.bootstrap ?? {};
+  const healthy = rpc.healthy && boot.status === "ready" && (s.engine?.tracked_pools ?? 0) > 0;
+
+  document.getElementById("mainDot").className = `dot ${healthy ? "ok" : "warn"}`;
+  document.getElementById("pausedBadge").className = `badge ${paused ? "warn" : "ok"}`;
+  document.getElementById("pausedBadge").textContent = paused ? "paused" : "live";
+  document.getElementById("bootBadge").className = `badge ${boot.status === "ready" ? "ok" : "bad"}`;
+  document.getElementById("bootBadge").textContent = `bootstrap: ${boot.status ?? "—"}`;
+  document.getElementById("blockBadge").textContent = `block ${fmt(rpc.latestBlock)}`;
+  document.getElementById("timeBadge").textContent = new Date().toLocaleTimeString();
+
+  setText("paused", paused ? "Paused" : "Live", paused ? "warnText" : "okText");
+  document.getElementById("pauseReason").textContent = s.executor?.pauseReason ?? "executor active";
+  setText("pools", `${s.engine?.tracked_pools ?? "—"} / ${s.engine?.tracked_cycles ?? "—"}`);
+  document.getElementById("engineBlock").textContent = `engine block ${fmt(s.engine?.latest_block)}`;
+  setText("rpcLatency", rpc.lastLatencyMs === undefined ? "—" : `${fmt(rpc.lastLatencyMs)}ms`, cls(rpc.healthy, (rpc.lastLatencyMs ?? 0) > 750));
+  document.getElementById("rpcBlock").textContent = `rpc block ${fmt(rpc.latestBlock)}`;
+  setText("streamUpdates", fmt(stream.poolUpdatesTotal));
+  document.getElementById("streamAge").textContent = stream.lastUpdateAgeMs === undefined ? "no stream update yet" : `age ${fmt(stream.lastUpdateAgeMs)}ms`;
+  setText("cuMonth", fmt(cu.estimatedCuPerMonth));
+  document.getElementById("cuTotal").textContent = `total ${fmt(cu.estimatedTotalCu)} CU`;
+  setText("reorgs", fmt(stream.reorg?.detectedTotal ?? 0), (stream.reorg?.detectedTotal ?? 0) > 0 ? "warnText" : "okText");
+  document.getElementById("reorgSub").textContent = `recoveries ${fmt(stream.reorg?.recoveryTotal ?? 0)}`;
+
+  renderRpcRows(rpc);
+  renderExecRows(exec, s.executor);
+  renderSystemRows(s, m);
+  pushChart(latencyHistory, latencyChart, rpc.lastLatencyMs);
+  pushChart(cuHistory, cuChart, cu.estimatedCuPerHour);
+
+  if ((stream.poolUpdatesTotal ?? 0) > lastStreamUpdates) {
+    addLog(`pool updates ${lastStreamUpdates} -> ${stream.poolUpdatesTotal}`, "ok");
+    lastStreamUpdates = stream.poolUpdatesTotal;
+  }
+}
+
+function renderRpcRows(rpc) {
+  const latency = rpc.lastLatencyMs ?? 0;
+  const pct = Math.max(5, Math.min(100, 100 - latency / 20));
+  document.getElementById("rpcRows").innerHTML = `
+    <div class="row"><span>public RPC</span><div class="track"><div class="fill" style="width:${pct}%;background:${rpc.healthy ? "#1d9e75" : "#e24b4a"}"></div></div><span>${rpc.healthy ? `${fmt(latency)}ms` : "ERR"}</span></div>
+    <div class="row"><span>failures</span><div class="track"><div class="fill" style="width:${Math.min(100, (rpc.consecutiveFailures ?? 0) * 20)}%;background:#ef9f27"></div></div><span>${rpc.consecutiveFailures ?? 0}</span></div>
+  `;
+  document.getElementById("rpcUpdated").textContent = "updated";
+}
+
+function renderExecRows(exec, executor) {
+  document.getElementById("execRows").innerHTML = [
+    ["submitted", exec.submitted ?? 0],
+    ["confirmed", exec.confirmed ?? 0],
+    ["reverted", exec.reverted ?? 0],
+    ["risk rejected", exec.riskRejected ?? 0],
+    ["inflight", exec.inflight ?? 0],
+    ["cumulative net", executor?.cumulativeEstimatedNetWei ?? "0"],
+  ].map(([k, v]) => `<div class="row"><span>${k}</span><div class="track"><div class="fill" style="width:20%"></div></div><span>${escapeHtml(v)}</span></div>`).join("");
+  document.getElementById("execUpdated").textContent = "updated";
+}
+
+function renderSystemRows(s, m) {
+  const rows = [
+    ["bootstrap", s.controlPlane?.bootstrap?.status ?? "—", `attempts ${s.controlPlane?.bootstrap?.attempts ?? 0}`],
+    ["stream", s.stream?.lastUpdateSource ?? "—", `lag ${fmt(s.stream?.publicBlockLag)}`],
+    ["reorg", `${s.stream?.reorg?.detectedTotal ?? 0} detected`, `${s.stream?.reorg?.lastReason ?? "none"}`],
+    ["CU", `${fmt(s.alchemyCu?.estimatedCuPerHour)} / hour`, `${fmt(s.alchemyCu?.websocketEvents)} ws events`],
+    ["metrics", "ok", `${Object.keys(m).length} series`],
+  ];
+  document.getElementById("systemRows").innerHTML = rows.map(([a, b, c]) => `<tr><td>${escapeHtml(a)}</td><td>${escapeHtml(b)}</td><td>${escapeHtml(c)}</td></tr>`).join("");
+  document.getElementById("controlUpdated").textContent = "updated";
+}
+
+function pushChart(arr, chart, value) {
+  arr.push(value === undefined ? null : Number(value));
+  arr.shift();
+  chart.data.datasets[0].data = [...arr];
+  chart.update("none");
+}
+
+setInterval(refreshNow, 3000);
+addLog("dashboard initialized", "ok");
+refreshNow();
+</script>
+</body>
+</html>

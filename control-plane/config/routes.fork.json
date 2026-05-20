@@ -7,7 +7,7 @@
     "swaps": [
       {
         "kind": "v2",
-        "adapter": "0x4BF6493866a963c8F30eAA5acd3B09c45431Ca12",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
         "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
         "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
         "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
@@ -20,7 +20,7 @@
       },
       {
         "kind": "v3",
-        "adapter": "0x71AB046Be68AFAFEA0792b4c5821d669DD3d8Fbe",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
         "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
         "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
         "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",

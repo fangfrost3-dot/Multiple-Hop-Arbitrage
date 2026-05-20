@@ -5,8 +5,11 @@ import {IDexAdapter} from "./interfaces/IDexAdapter.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 import {IFlashLoanSimpleReceiver} from "./interfaces/IFlashLoanSimpleReceiver.sol";
 import {IPool} from "./interfaces/IPool.sol";
+import {SafeERC20} from "./libraries/SafeERC20.sol";
 
 contract FlashLoanExecutor is IFlashLoanSimpleReceiver {
+  using SafeERC20 for address;
+
   error NotOwner();
   error InvalidLender();
   error InvalidInitiator();
@@ -77,7 +80,7 @@ contract FlashLoanExecutor is IFlashLoanSimpleReceiver {
     uint256 currentAmount = amount;
     for (uint256 i = 0; i < plan.swaps.length; i++) {
       SwapInstruction memory instruction = plan.swaps[i];
-      IERC20(instruction.tokenIn).approve(instruction.adapter, currentAmount);
+      instruction.tokenIn.forceApprove(instruction.adapter, currentAmount);
       currentAmount = IDexAdapter(instruction.adapter).executeSwap(
         instruction.tokenIn,
         instruction.tokenOut,
@@ -93,11 +96,11 @@ contract FlashLoanExecutor is IFlashLoanSimpleReceiver {
       revert InsufficientProfit(finalBalance, minReturn);
     }
 
-    IERC20(asset).approve(address(lender), amountOwed);
+    asset.forceApprove(address(lender), amountOwed);
 
     uint256 profit = finalBalance - startingBalance - premium;
     if (profit > 0) {
-      IERC20(plan.profitToken).transfer(plan.profitRecipient, profit);
+      plan.profitToken.safeTransfer(plan.profitRecipient, profit);
     }
 
     emit ArbitrageExecuted(asset, amount, amountOwed, profit);
