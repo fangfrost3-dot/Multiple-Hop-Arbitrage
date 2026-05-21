@@ -1,27 +1,133 @@
 [
   {
-    "kind": "v2_factory",
+    "kind": "v2",
+    "poolId": "camelot-arb-weth-v2",
     "dex": "camelot",
-    "factory": "0x6EcCab422D763aC031210895C81787E87B43A652",
-    "tokens": [
-      "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-      "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
-    ],
+    "pair": "0xa6c5c7d189fa4eb5af8ba34e63dcdd3a635d433f",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
     "feeBps": 30
   },
   {
-    "kind": "v2_factory",
+    "kind": "v2",
+    "poolId": "camelot-weth-arb-v2",
     "dex": "camelot",
-    "factory": "0x6EcCab422D763aC031210895C81787E87B43A652",
-    "tokens": [
-      "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-      "0x912CE59144191C1204E64559FE8253a0e49E6548"
-    ],
+    "pair": "0xa6c5c7d189fa4eb5af8ba34e63dcdd3a635d433f",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-weth-arb-v2",
+    "dex": "sushi",
+    "pair": "0xbf6cbb1f40a542af50839cad01b0dc1747f11e18",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-arb-weth-v2",
+    "dex": "sushi",
+    "pair": "0xbf6cbb1f40a542af50839cad01b0dc1747f11e18",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "camelot-weth-usdce-v2",
+    "dex": "camelot",
+    "pair": "0x84652bb2539513baf36e225c930fdd8eaa63ce27",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "camelot-usdce-weth-v2",
+    "dex": "camelot",
+    "pair": "0x84652bb2539513baf36e225c930fdd8eaa63ce27",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-weth-usdce-v2",
+    "dex": "sushi",
+    "pair": "0x905dfcd5649217c42684f23958568e533c711aa3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-usdce-weth-v2",
+    "dex": "sushi",
+    "pair": "0x905dfcd5649217c42684f23958568e533c711aa3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-weth-usdc-v2",
+    "dex": "sushi",
+    "pair": "0x57b85fef094e10b5eecdf350af688299e9553378",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-usdc-weth-v2",
+    "dex": "sushi",
+    "pair": "0x57b85fef094e10b5eecdf350af688299e9553378",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "camelot-usdc-usdce-v2",
+    "dex": "camelot",
+    "pair": "0xc1ad239594c165bd4d8847d281232172a4520818",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "camelot-usdce-usdc-v2",
+    "dex": "camelot",
+    "pair": "0xc1ad239594c165bd4d8847d281232172a4520818",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-usdce-dai-v2",
+    "dex": "sushi",
+    "pair": "0x5602aba2111aa4ae90ad34a5b5b815f26d69c94b",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v2",
+    "poolId": "sushi-dai-usdce-v2",
+    "dex": "sushi",
+    "pair": "0x5602aba2111aa4ae90ad34a5b5b815f26d69c94b",
+    "tokenIn": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
     "feeBps": 30
   },
   {
     "kind": "v3",
-    "poolId": "uniswap-weth-arb-v3",
+    "poolId": "uni-weth-arb-v3-500",
     "dex": "uniswap-v3",
     "poolAddress": "0xc6f780497a95e246eb9449f5e4770916dcd6396a",
     "handler": "uniswap_v3",
@@ -30,12 +136,113 @@
     "feeBps": 5
   },
   {
-    "kind": "v2",
-    "poolId": "camelot-arb-weth-v2",
-    "dex": "camelot",
-    "pair": "0xa6c5c7d189fa4eb5af8ba34e63dcdd3a635d433f",
+    "kind": "v3",
+    "poolId": "uni-arb-weth-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc6f780497a95e246eb9449f5e4770916dcd6396a",
+    "handler": "uniswap_v3",
     "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
     "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
-    "feeBps": 30
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdc-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc6962004f452be9203591991d15f6b388e09e8d0",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-weth-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc6962004f452be9203591991d15f6b388e09e8d0",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdce-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc31e54c7a869b9fcbecc14363cf510d1c41fa443",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdce-weth-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc31e54c7a869b9fcbecc14363cf510d1c41fa443",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-usdce-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x8e295789c9465487074a65b1ae9ce0351172393f",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdce-usdc-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x8e295789c9465487074a65b1ae9ce0351172393f",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-arb-usdce-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xcda53b1f66614552f834ceef361a8d12a0b8dad8",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdce-arb-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xcda53b1f66614552f834ceef361a8d12a0b8dad8",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdce-dai-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xf0428617433652c9dc6d1093a42adfbf30d29f74",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-dai-usdce-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xf0428617433652c9dc6d1093a42adfbf30d29f74",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 1
   }
 ]

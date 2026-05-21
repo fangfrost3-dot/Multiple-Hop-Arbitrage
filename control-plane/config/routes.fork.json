@@ -1,6 +1,6 @@
 [
   {
-    "cycleId": "camelot-arb-weth-v2->uniswap-weth-arb-v3",
+    "cycleId": "camelot-arb-weth-v2->uni-weth-arb-v3-500",
     "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
     "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
     "minProfit": "0",
@@ -25,6 +25,422 @@
         "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
         "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-arb-weth-v2->uni-weth-arb-v3-500",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0x912CE59144191C1204E64559FE8253a0e49E6548",
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "camelot-weth-arb-v2->uni-arb-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
+        "path": [
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          "0x912CE59144191C1204E64559FE8253a0e49E6548"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-weth-arb-v2->uni-arb-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          "0x912CE59144191C1204E64559FE8253a0e49E6548"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "camelot-weth-usdce-v2->uni-usdce-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
+        "path": [
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-weth-usdce-v2->uni-usdce-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "camelot-usdce-weth-v2->uni-weth-usdce-v3-500",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
+        "path": [
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-usdce-weth-v2->uni-weth-usdce-v3-500",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-weth-usdc-v2->uni-usdc-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+          "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-usdc-weth-v2->uni-weth-usdc-v3-500",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "camelot-usdc-usdce-v2->uni-usdce-usdc-v3-100",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
+        "path": [
+          "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "camelot-usdce-usdc-v2->uni-usdc-usdce-v3-100",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xc873fEcbd354f5A56E00E710B90EF4201db2448d",
+        "path": [
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+          "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-usdce-dai-v2->uni-dai-usdce-v3-100",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+          "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ]
+  },
+  {
+    "cycleId": "sushi-dai-usdce-v2->uni-usdce-dai-v3-100",
+    "borrowToken": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "profitToken": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v2",
+        "adapter": "0x45dA5A260ff01210F2f0151E0DcE82217380D914",
+        "tokenIn": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506",
+        "path": [
+          "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+          "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        ],
+        "amountOutMin": "1",
+        "deadlineSeconds": 60
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
         "amountOutMin": "1",
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
