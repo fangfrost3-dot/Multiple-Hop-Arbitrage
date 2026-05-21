@@ -12,12 +12,8 @@ if (-not (Test-Path -LiteralPath $KeyPath)) {
   throw "SSH key not found: $KeyPath"
 }
 
-$dashboardPath = Join-Path $PSScriptRoot "index.html"
-if (-not (Test-Path -LiteralPath $dashboardPath)) {
-  throw "Dashboard file not found: $dashboardPath"
-}
-
 $sshTarget = "$UserName@$HostName"
+$dashboardUrl = "http://127.0.0.1:$LocalPort/dashboard"
 $sshArgs = @(
   "-i", "`"$KeyPath`"",
   "-L", "$LocalPort`:127.0.0.1:$RemotePort",
@@ -28,7 +24,8 @@ $command = "ssh $($sshArgs -join ' ')"
 Start-Process powershell.exe -ArgumentList @("-NoExit", "-Command", $command)
 
 Start-Sleep -Seconds 2
-Start-Process $dashboardPath
+Start-Process $dashboardUrl
 
 Write-Host "Tunnel requested: http://127.0.0.1:$LocalPort -> $sshTarget`:127.0.0.1:$RemotePort"
+Write-Host "Dashboard URL: $dashboardUrl"
 Write-Host "Keep the tunnel PowerShell window open while using the dashboard."

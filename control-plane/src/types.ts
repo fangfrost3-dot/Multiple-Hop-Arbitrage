@@ -110,6 +110,16 @@ export interface ExecutorStatus {
   pauseReason?: string;
   metrics: ExecutorMetrics;
   cumulativeEstimatedNetWei: string;
+  settings: ExecutorRuntimeSettings;
+}
+
+export interface ExecutorRuntimeSettings {
+  maxBorrowAmount: string;
+  maxRouteHops: number;
+  minProfitRealizationBps: number;
+  maxGasCostWei: string;
+  maxCumulativeEstimatedLossWei: string;
+  maxInflight: number;
 }
 
 export interface V2PoolConfig {

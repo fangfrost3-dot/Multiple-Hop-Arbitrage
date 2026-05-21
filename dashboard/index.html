@@ -7,103 +7,131 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
   :root {
-    --bg: #0d0f14; --bg2: #141720; --bg3: #1c2030;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
-    --text: #e8eaf0; --text2: #7c8299; --text3: #4a5068;
-    --green: #1d9e75; --green2: #5dcaa5; --amber: #ef9f27;
-    --red: #e24b4a; --blue: #378add; --mono: "JetBrains Mono", Consolas, monospace;
-    --sans: Inter, system-ui, sans-serif; --radius: 8px;
+    --bg: #0d0f14; --bg2: #151922; --bg3: #202633;
+    --border: rgba(255,255,255,.08); --border2: rgba(255,255,255,.15);
+    --text: #e8eaf0; --muted: #82889d; --dim: #4d546b;
+    --green: #1d9e75; --green2: #5dcaa5; --amber: #ef9f27; --red: #e24b4a; --blue: #378add;
+    --mono: "JetBrains Mono", Consolas, monospace; --sans: Inter, system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 16px 20px; min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  body { margin: 0; min-height: 100vh; padding: 16px 20px; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
   .brand span { color: var(--green2); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex: 0 0 auto; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
   .dot.ok { background: var(--green); box-shadow: 0 0 12px rgba(29,158,117,.6); }
   .dot.warn { background: var(--amber); }
   .dot.bad { background: var(--red); }
-  .badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-  .badge { font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border2); color: var(--text2); }
+  .badges, .actions, .formGrid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { font-family: var(--mono); font-size: 10px; padding: 4px 10px; border: 1px solid var(--border2); border-radius: 99px; color: var(--muted); }
   .badge.ok { color: var(--green2); border-color: rgba(29,158,117,.45); background: rgba(29,158,117,.1); }
   .badge.warn { color: var(--amber); border-color: rgba(239,159,39,.45); background: rgba(239,159,39,.1); }
   .badge.bad { color: var(--red); border-color: rgba(226,75,74,.45); background: rgba(226,75,74,.1); }
-  .bar, .card, .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); }
+  .bar, .card, .metric { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; }
   .bar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin-bottom: 14px; font-family: var(--mono); font-size: 11px; }
-  .bar input { width: min(460px, 100%); flex: 1; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 7px 9px; font-family: var(--mono); outline: none; }
+  input { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 7px 9px; font-family: var(--mono); outline: none; }
+  .bar input { flex: 1; min-width: 220px; }
   button { background: transparent; border: 1px solid var(--border2); color: var(--text); border-radius: 7px; padding: 7px 12px; font-family: var(--mono); font-size: 11px; cursor: pointer; }
   button:hover { background: var(--bg3); }
-  button.danger { color: var(--red); border-color: rgba(226,75,74,.45); }
   button.primary { color: var(--green2); border-color: rgba(29,158,117,.45); }
+  button.danger { color: var(--red); border-color: rgba(226,75,74,.45); }
   .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 10px; margin-bottom: 14px; }
   .metric { padding: 12px 14px; }
-  .label { color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; margin-bottom: 6px; }
+  .label { color: var(--dim); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; margin-bottom: 6px; }
   .value { font-family: var(--mono); font-size: 21px; font-weight: 700; line-height: 1; overflow-wrap: anywhere; }
-  .sub { color: var(--text2); font-family: var(--mono); font-size: 10px; margin-top: 6px; }
+  .sub { color: var(--muted); font-family: var(--mono); font-size: 10px; margin-top: 6px; overflow-wrap: anywhere; }
   .okText { color: var(--green2); } .warnText { color: var(--amber); } .badText { color: var(--red); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } }
-  .card { padding: 14px 16px; min-height: 150px; }
-  .title { display: flex; justify-content: space-between; gap: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; margin-bottom: 13px; }
+  .grid3 { display: grid; grid-template-columns: 1.1fr .9fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 980px) { .grid3, .grid2 { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } }
+  .card { padding: 14px 16px; min-height: 145px; }
+  .title { display: flex; justify-content: space-between; gap: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; margin-bottom: 13px; }
   .rows { display: grid; gap: 8px; }
-  .row { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
+  .row { display: grid; grid-template-columns: 140px 1fr auto; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
   .track { height: 5px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
   .fill { height: 100%; background: var(--blue); border-radius: 99px; }
+  .setting { display: grid; gap: 5px; min-width: 160px; flex: 1; }
+  .setting label { color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
   table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; min-width: 620px; }
-  th { color: var(--text3); text-transform: uppercase; letter-spacing: .06em; font-weight: 400; padding: 0 10px 10px 0; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--dim); text-transform: uppercase; letter-spacing: .06em; font-weight: 400; padding: 0 10px 10px 0; text-align: left; border-bottom: 1px solid var(--border); }
   td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border); }
   .tableWrap { overflow-x: auto; }
   .chart { height: 140px; }
-  .log { height: 170px; overflow: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: var(--mono); font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+  .log { height: 180px; overflow: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: var(--mono); font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
   .logLine { display: flex; gap: 10px; }
-  .time { color: var(--text3); min-width: 68px; }
+  .time { color: var(--dim); min-width: 68px; }
 </style>
 </head>
 <body>
   <div class="topbar">
     <div class="brand"><div id="mainDot" class="dot"></div><div>Arb<span>Bot</span> Dashboard</div></div>
     <div class="badges">
-      <span id="pausedBadge" class="badge">paused: —</span>
-      <span id="bootBadge" class="badge">bootstrap: —</span>
-      <span id="blockBadge" class="badge">block —</span>
-      <span id="timeBadge" class="badge">—</span>
+      <span id="pausedBadge" class="badge">paused: -</span>
+      <span id="bootBadge" class="badge">bootstrap: -</span>
+      <span id="blockBadge" class="badge">block -</span>
+      <span id="timeBadge" class="badge">-</span>
     </div>
   </div>
 
   <div class="bar">
-    <span>Status URL</span>
-    <input id="baseUrl" value="http://127.0.0.1:9090" spellcheck="false" />
+    <span>API</span>
+    <input id="baseUrl" value="" spellcheck="false" />
     <button onclick="refreshNow()">Refresh</button>
-    <button class="primary" onclick="unpauseExecutor()">Unpause Executor</button>
-    <button class="danger" onclick="pauseExecutor()">Pause Executor</button>
+    <button class="primary" onclick="startBot()">Start Bot</button>
+    <button onclick="restartBot()">Restart Bot</button>
+    <button class="danger" onclick="stopBot()">Stop Bot</button>
+    <button onclick="showAttachCommand()">Attach</button>
+    <button onclick="detachBotClients()">Detach</button>
+    <button class="primary" onclick="unpauseExecutor()">Unpause</button>
+    <button class="danger" onclick="pauseExecutor()">Pause</button>
   </div>
 
   <div class="metrics">
-    <div class="metric"><div class="label">Executor</div><div id="paused" class="value">—</div><div id="pauseReason" class="sub">—</div></div>
-    <div class="metric"><div class="label">Pools / Cycles</div><div id="pools" class="value">—</div><div id="engineBlock" class="sub">engine block —</div></div>
-    <div class="metric"><div class="label">RPC latency</div><div id="rpcLatency" class="value">—</div><div id="rpcBlock" class="sub">rpc block —</div></div>
-    <div class="metric"><div class="label">Stream updates</div><div id="streamUpdates" class="value">—</div><div id="streamAge" class="sub">age —</div></div>
-    <div class="metric"><div class="label">Alchemy CU/mo</div><div id="cuMonth" class="value">—</div><div id="cuTotal" class="sub">total —</div></div>
-    <div class="metric"><div class="label">Reorgs</div><div id="reorgs" class="value">—</div><div id="reorgSub" class="sub">recoveries —</div></div>
+    <div class="metric"><div class="label">Executor</div><div id="paused" class="value">-</div><div id="pauseReason" class="sub">-</div></div>
+    <div class="metric"><div class="label">Pools / Cycles</div><div id="pools" class="value">-</div><div id="engineBlock" class="sub">engine block -</div></div>
+    <div class="metric"><div class="label">RPC latency</div><div id="rpcLatency" class="value">-</div><div id="rpcBlock" class="sub">rpc block -</div></div>
+    <div class="metric"><div class="label">Stream updates</div><div id="streamUpdates" class="value">-</div><div id="streamAge" class="sub">age -</div></div>
+    <div class="metric"><div class="label">CU / month</div><div id="cuMonth" class="value">-</div><div id="cuTotal" class="sub">total -</div></div>
+    <div class="metric"><div class="label">Candidates</div><div id="candidates" class="value">-</div><div id="candidateSub" class="sub">profitable -</div></div>
+    <div class="metric"><div class="label">Supervisor</div><div id="supervisor" class="value">-</div><div id="supervisorSub" class="sub">tmux -</div></div>
   </div>
 
-  <div class="grid2">
+  <div class="grid3">
     <div class="card">
-      <div class="title"><span>RPC Health</span><span id="rpcUpdated">—</span></div>
-      <div id="rpcRows" class="rows"></div>
+      <div class="title"><span>Runtime Settings</span><span>applies immediately</span></div>
+      <div class="formGrid">
+        <div class="setting"><label>Max borrow amount</label><input id="maxBorrowAmount" inputmode="numeric" /></div>
+        <div class="setting"><label>Max route hops</label><input id="maxRouteHops" type="number" min="0" step="1" /></div>
+        <div class="setting"><label>Min expected profit</label><input id="minExpectedProfit" inputmode="numeric" /></div>
+        <div class="setting"><label>Max gas cost wei</label><input id="maxGasCostWei" inputmode="numeric" /></div>
+        <div class="setting"><label>Max loss wei</label><input id="maxLossWei" inputmode="numeric" /></div>
+        <div class="setting"><label>Max inflight</label><input id="maxInflight" type="number" min="1" step="1" /></div>
+      </div>
+      <div class="actions" style="margin-top:12px">
+        <button class="primary" onclick="saveSettings()">Save Settings</button>
+        <button onclick="loadSettings()">Reload Settings</button>
+      </div>
+      <div id="settingsNote" class="sub">Runtime settings reset on process restart unless also saved in .env.</div>
     </div>
     <div class="card">
-      <div class="title"><span>Execution Metrics</span><span id="execUpdated">—</span></div>
+      <div class="title"><span>Safety Checklist</span><span id="safetyState">-</span></div>
+      <div id="safetyRows" class="rows"></div>
+    </div>
+    <div class="card">
+      <div class="title"><span>Execution Metrics</span><span id="execUpdated">-</span></div>
       <div id="execRows" class="rows"></div>
     </div>
   </div>
 
-  <div class="card tableWrap" style="margin-bottom:14px">
-    <div class="title"><span>Control Plane</span><span id="controlUpdated">—</span></div>
-    <table>
-      <thead><tr><th>Subsystem</th><th>Status</th><th>Detail</th></tr></thead>
-      <tbody id="systemRows"></tbody>
-    </table>
+  <div class="grid2">
+    <div class="card">
+      <div class="title"><span>RPC Health</span><span id="rpcUpdated">-</span></div>
+      <div id="rpcRows" class="rows"></div>
+    </div>
+    <div class="card tableWrap">
+      <div class="title"><span>Control Plane</span><span id="controlUpdated">-</span></div>
+      <table><thead><tr><th>Subsystem</th><th>Status</th><th>Detail</th></tr></thead><tbody id="systemRows"></tbody></table>
+    </div>
   </div>
 
   <div class="grid2">
@@ -117,9 +145,14 @@
   </div>
 
 <script>
+const defaultBase = location.protocol === "file:" ? "http://127.0.0.1:9090" : location.origin;
+document.getElementById("baseUrl").value = defaultBase;
+
 const latencyHistory = Array(40).fill(null);
 const cuHistory = Array(40).fill(null);
 let lastStreamUpdates = 0;
+let lastSettingsJson = "";
+let lastSupervisor = undefined;
 let logs = [];
 
 const chartOptions = {
@@ -128,7 +161,7 @@ const chartOptions = {
   plugins: { legend: { display: false } },
   scales: {
     x: { display: false },
-    y: { ticks: { color: "#4a5068", font: { size: 10, family: "monospace" } }, grid: { color: "rgba(255,255,255,.04)" } },
+    y: { ticks: { color: "#4d546b", font: { size: 10, family: "monospace" } }, grid: { color: "rgba(255,255,255,.04)" } },
   },
 };
 const latencyChart = new Chart(document.getElementById("latencyChart"), {
@@ -142,24 +175,11 @@ const cuChart = new Chart(document.getElementById("cuChart"), {
   options: chartOptions,
 });
 
-function baseUrl() {
-  return document.getElementById("baseUrl").value.replace(/\/$/, "");
-}
-
-function fmt(n) {
-  if (n === undefined || n === null || Number.isNaN(Number(n))) return "—";
-  return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
-function cls(ok, warn = false) {
-  return ok ? "okText" : warn ? "warnText" : "badText";
-}
-
-function setText(id, value, klass) {
-  const el = document.getElementById(id);
-  el.textContent = value;
-  el.className = klass ? `value ${klass}` : "value";
-}
+function baseUrl() { return document.getElementById("baseUrl").value.replace(/\/$/, ""); }
+function fmt(n) { if (n === undefined || n === null || Number.isNaN(Number(n))) return "-"; return Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
+function shortWei(v) { if (v === undefined || v === null || v === "") return "-"; const s = String(v); return s.length > 16 ? `${s.slice(0, 8)}...${s.slice(-6)}` : s; }
+function setText(id, value, klass) { const el = document.getElementById(id); el.textContent = value; el.className = klass ? `value ${klass}` : "value"; }
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 function addLog(msg, type = "info") {
   const now = new Date();
@@ -168,65 +188,129 @@ function addLog(msg, type = "info") {
   logs = logs.slice(0, 100);
   renderLog();
 }
-
 function renderLog() {
   document.getElementById("log").innerHTML = logs.slice(0, 60).map(l => {
     const color = l.type === "ok" ? "okText" : l.type === "warn" ? "warnText" : l.type === "bad" ? "badText" : "";
     return `<div class="logLine"><span class="time">${l.t}</span><span class="${color}">${escapeHtml(l.msg)}</span></div>`;
   }).join("");
 }
+function clearLog() { logs = []; renderLog(); }
 
-function clearLog() {
-  logs = [];
-  renderLog();
+async function api(path, options) {
+  const res = await fetch(`${baseUrl()}${path}`, options);
+  if (!res.ok) throw new Error(`${path} ${res.status}`);
+  return res;
 }
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
 async function postControl(action) {
   try {
-    const res = await fetch(`${baseUrl()}/${action}`, { method: "POST" });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    await api(`/${action}`, { method: "POST" });
     addLog(`${action} accepted`, "ok");
     await refreshNow();
   } catch (err) {
     addLog(`${action} failed: ${err.message}`, "bad");
   }
 }
-
-function unpauseExecutor() {
-  const ok = confirm(
-    "Unpause executor and allow live transaction submission?\n\nOnly continue if bootstrap is ready, pools/cycles are loaded, RPC is healthy, and risk caps are set.",
-  );
-  if (!ok) {
-    addLog("unpause cancelled by user", "warn");
-    return;
+async function supervisorAction(action) {
+  try {
+    const res = await api(`/supervisor/${action}`, { method: "POST" });
+    lastSupervisor = await res.json();
+    addLog(`supervisor ${action} accepted`, "ok");
+    renderSupervisor(lastSupervisor);
+    await refreshNow();
+  } catch (err) {
+    addLog(`supervisor ${action} failed: ${err.message}`, "bad");
   }
+}
+function startBot() { void supervisorAction("start"); }
+function restartBot() {
+  const ok = confirm("Restart the tmux bot session? This stops the current process and starts it again paused if .env says EXECUTOR_START_PAUSED=true.");
+  if (ok) void supervisorAction("restart");
+}
+function stopBot() {
+  const ok = confirm("Stop the tmux bot session? The executor should be paused before stopping.");
+  if (ok) void supervisorAction("stop");
+}
+async function detachBotClients() { await supervisorAction("detach"); }
+async function showAttachCommand() {
+  try {
+    const data = await (await api("/supervisor/attach-command")).json();
+    await navigator.clipboard?.writeText(data.command).catch(() => undefined);
+    addLog(`attach command: ${data.command}`, "warn");
+  } catch {
+    addLog("attach command: tmux attach -t bot", "warn");
+  }
+}
+function unpauseExecutor() {
+  const ok = confirm("Unpause executor and allow live transaction submission?\n\nContinue only if ARB is funded, RPC is healthy, risk caps are nonzero, and this is a controlled test.");
+  if (!ok) return addLog("unpause cancelled", "warn");
   void postControl("resume");
 }
+function pauseExecutor() { void postControl("pause"); }
 
-function pauseExecutor() {
-  void postControl("pause");
+async function loadSettings() {
+  try {
+    const settings = await (await api("/settings")).json();
+    fillSettings(settings);
+    addLog("settings loaded", "ok");
+  } catch (err) {
+    addLog(`settings load failed: ${err.message}`, "bad");
+  }
+}
+function fillSettings(settings) {
+  const ex = settings.executor ?? {};
+  document.getElementById("maxBorrowAmount").value = ex.maxBorrowAmount ?? "0";
+  document.getElementById("maxRouteHops").value = ex.maxRouteHops ?? "0";
+  document.getElementById("minExpectedProfit").value = settings.minExpectedProfit ?? "0";
+  document.getElementById("maxGasCostWei").value = ex.maxGasCostWei ?? "0";
+  document.getElementById("maxLossWei").value = ex.maxCumulativeEstimatedLossWei ?? "0";
+  document.getElementById("maxInflight").value = ex.maxInflight ?? "1";
+  lastSettingsJson = JSON.stringify(settings);
+}
+async function saveSettings() {
+  const body = {
+    minExpectedProfit: document.getElementById("minExpectedProfit").value.trim(),
+    executor: {
+      maxBorrowAmount: document.getElementById("maxBorrowAmount").value.trim(),
+      maxRouteHops: Number(document.getElementById("maxRouteHops").value),
+      maxGasCostWei: document.getElementById("maxGasCostWei").value.trim(),
+      maxCumulativeEstimatedLossWei: document.getElementById("maxLossWei").value.trim(),
+      maxInflight: Number(document.getElementById("maxInflight").value),
+    },
+  };
+  try {
+    const res = await api("/settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    fillSettings((await res.json()).settings);
+    addLog("runtime settings saved", "ok");
+    await refreshNow();
+  } catch (err) {
+    addLog(`settings save failed: ${err.message}`, "bad");
+  }
 }
 
 async function refreshNow() {
   try {
-    const [statusRes, metricsRes] = await Promise.all([
-      fetch(`${baseUrl()}/status`),
-      fetch(`${baseUrl()}/metrics`),
+    const [statusRes, metricsRes, supervisorRes] = await Promise.allSettled([
+      api("/status"),
+      api("/metrics"),
+      api("/supervisor/status"),
     ]);
-    if (!statusRes.ok) throw new Error(`/status ${statusRes.status}`);
-    const status = await statusRes.json();
-    const metricsText = metricsRes.ok ? await metricsRes.text() : "";
+    if (supervisorRes.status === "fulfilled") {
+      lastSupervisor = await supervisorRes.value.json();
+      renderSupervisor(lastSupervisor);
+    }
+    if (statusRes.status === "rejected") throw statusRes.reason;
+    if (metricsRes.status === "rejected") throw metricsRes.reason;
+    const statusResValue = statusRes.value;
+    const metricsResValue = metricsRes.value;
+    const status = await statusResValue.json();
+    const metricsText = await metricsResValue.text();
     renderStatus(status, parseMetrics(metricsText));
   } catch (err) {
     document.getElementById("mainDot").className = "dot bad";
     addLog(`status fetch failed: ${err.message}`, "bad");
+    if (lastSupervisor) renderSupervisor(lastSupervisor);
   }
 }
-
 function parseMetrics(text) {
   const out = {};
   for (const line of text.split("\n")) {
@@ -236,7 +320,6 @@ function parseMetrics(text) {
   }
   return out;
 }
-
 function renderStatus(s, m) {
   const paused = Boolean(s.executor?.paused);
   const rpc = s.rpc?.publicRpc ?? {};
@@ -244,31 +327,34 @@ function renderStatus(s, m) {
   const cu = s.alchemyCu ?? {};
   const exec = s.executor?.metrics ?? {};
   const boot = s.controlPlane?.bootstrap ?? {};
+  const settings = s.settings ?? {};
   const healthy = rpc.healthy && boot.status === "ready" && (s.engine?.tracked_pools ?? 0) > 0;
 
   document.getElementById("mainDot").className = `dot ${healthy ? "ok" : "warn"}`;
   document.getElementById("pausedBadge").className = `badge ${paused ? "warn" : "ok"}`;
   document.getElementById("pausedBadge").textContent = paused ? "paused" : "live";
   document.getElementById("bootBadge").className = `badge ${boot.status === "ready" ? "ok" : "bad"}`;
-  document.getElementById("bootBadge").textContent = `bootstrap: ${boot.status ?? "—"}`;
+  document.getElementById("bootBadge").textContent = `bootstrap: ${boot.status ?? "-"}`;
   document.getElementById("blockBadge").textContent = `block ${fmt(rpc.latestBlock)}`;
   document.getElementById("timeBadge").textContent = new Date().toLocaleTimeString();
 
   setText("paused", paused ? "Paused" : "Live", paused ? "warnText" : "okText");
   document.getElementById("pauseReason").textContent = s.executor?.pauseReason ?? "executor active";
-  setText("pools", `${s.engine?.tracked_pools ?? "—"} / ${s.engine?.tracked_cycles ?? "—"}`);
+  setText("pools", `${s.engine?.tracked_pools ?? "-"} / ${s.engine?.tracked_cycles ?? "-"}`);
   document.getElementById("engineBlock").textContent = `engine block ${fmt(s.engine?.latest_block)}`;
-  setText("rpcLatency", rpc.lastLatencyMs === undefined ? "—" : `${fmt(rpc.lastLatencyMs)}ms`, cls(rpc.healthy, (rpc.lastLatencyMs ?? 0) > 750));
+  setText("rpcLatency", rpc.lastLatencyMs === undefined ? "-" : `${fmt(rpc.lastLatencyMs)}ms`, rpc.healthy ? "okText" : "badText");
   document.getElementById("rpcBlock").textContent = `rpc block ${fmt(rpc.latestBlock)}`;
   setText("streamUpdates", fmt(stream.poolUpdatesTotal));
   document.getElementById("streamAge").textContent = stream.lastUpdateAgeMs === undefined ? "no stream update yet" : `age ${fmt(stream.lastUpdateAgeMs)}ms`;
   setText("cuMonth", fmt(cu.estimatedCuPerMonth));
   document.getElementById("cuTotal").textContent = `total ${fmt(cu.estimatedTotalCu)} CU`;
-  setText("reorgs", fmt(stream.reorg?.detectedTotal ?? 0), (stream.reorg?.detectedTotal ?? 0) > 0 ? "warnText" : "okText");
-  document.getElementById("reorgSub").textContent = `recoveries ${fmt(stream.reorg?.recoveryTotal ?? 0)}`;
+  setText("candidates", fmt(s.engine?.simulated_cycles_total ?? 0));
+  document.getElementById("candidateSub").textContent = `profitable ${fmt(s.engine?.profitable_candidates_total ?? 0)}`;
 
+  if (settings && JSON.stringify(settings) !== lastSettingsJson) fillSettings(settings);
   renderRpcRows(rpc);
   renderExecRows(exec, s.executor);
+  renderSafetyRows(s);
   renderSystemRows(s, m);
   pushChart(latencyHistory, latencyChart, rpc.lastLatencyMs);
   pushChart(cuHistory, cuChart, cu.estimatedCuPerHour);
@@ -278,7 +364,6 @@ function renderStatus(s, m) {
     lastStreamUpdates = stream.poolUpdatesTotal;
   }
 }
-
 function renderRpcRows(rpc) {
   const latency = rpc.lastLatencyMs ?? 0;
   const pct = Math.max(5, Math.min(100, 100 - latency / 20));
@@ -288,7 +373,6 @@ function renderRpcRows(rpc) {
   `;
   document.getElementById("rpcUpdated").textContent = "updated";
 }
-
 function renderExecRows(exec, executor) {
   document.getElementById("execRows").innerHTML = [
     ["submitted", exec.submitted ?? 0],
@@ -296,23 +380,46 @@ function renderExecRows(exec, executor) {
     ["reverted", exec.reverted ?? 0],
     ["risk rejected", exec.riskRejected ?? 0],
     ["inflight", exec.inflight ?? 0],
-    ["cumulative net", executor?.cumulativeEstimatedNetWei ?? "0"],
+    ["max borrow", shortWei(executor?.settings?.maxBorrowAmount)],
   ].map(([k, v]) => `<div class="row"><span>${k}</span><div class="track"><div class="fill" style="width:20%"></div></div><span>${escapeHtml(v)}</span></div>`).join("");
   document.getElementById("execUpdated").textContent = "updated";
 }
-
+function renderSupervisor(s) {
+  if (!s) return;
+  const running = Boolean(s.sessionExists);
+  const healthy = Boolean(s.botHealthy);
+  setText("supervisor", running ? "Running" : "Stopped", healthy ? "okText" : running ? "warnText" : "badText");
+  document.getElementById("supervisorSub").textContent = `tmux ${s.tmuxSession ?? "bot"} / bot ${healthy ? "healthy" : "offline"}`;
+}
+function renderSafetyRows(s) {
+  const ex = s.executor?.settings ?? {};
+  const checks = [
+    ["paused before test", Boolean(s.executor?.paused)],
+    ["rpc healthy", Boolean(s.rpc?.publicRpc?.healthy)],
+    ["bootstrap ready", s.controlPlane?.bootstrap?.status === "ready"],
+    ["pools loaded", (s.engine?.tracked_pools ?? 0) > 0],
+    ["bot tmux running", Boolean(lastSupervisor?.sessionExists)],
+    ["borrow cap set", BigInt(ex.maxBorrowAmount ?? "0") > 0n],
+    ["gas cap set", BigInt(ex.maxGasCostWei ?? "0") > 0n],
+    ["loss cap set", BigInt(ex.maxCumulativeEstimatedLossWei ?? "0") > 0n],
+  ];
+  const okCount = checks.filter(([, ok]) => ok).length;
+  document.getElementById("safetyState").textContent = `${okCount}/${checks.length}`;
+  document.getElementById("safetyRows").innerHTML = checks.map(([name, ok]) =>
+    `<div class="row"><span>${escapeHtml(name)}</span><div class="track"><div class="fill" style="width:${ok ? 100 : 8}%;background:${ok ? "#1d9e75" : "#e24b4a"}"></div></div><span class="${ok ? "okText" : "badText"}">${ok ? "ok" : "fix"}</span></div>`
+  ).join("");
+}
 function renderSystemRows(s, m) {
   const rows = [
-    ["bootstrap", s.controlPlane?.bootstrap?.status ?? "—", `attempts ${s.controlPlane?.bootstrap?.attempts ?? 0}`],
-    ["stream", s.stream?.lastUpdateSource ?? "—", `lag ${fmt(s.stream?.publicBlockLag)}`],
+    ["bootstrap", s.controlPlane?.bootstrap?.status ?? "-", `attempts ${s.controlPlane?.bootstrap?.attempts ?? 0}`],
+    ["stream", s.stream?.lastUpdateSource ?? "-", `lag ${fmt(s.stream?.publicBlockLag)}`],
     ["reorg", `${s.stream?.reorg?.detectedTotal ?? 0} detected`, `${s.stream?.reorg?.lastReason ?? "none"}`],
-    ["CU", `${fmt(s.alchemyCu?.estimatedCuPerHour)} / hour`, `${fmt(s.alchemyCu?.websocketEvents)} ws events`],
+    ["runtime hops", `${s.executor?.settings?.maxRouteHops ?? "-"}`, `engine ${s.settings?.engine?.maxHops ?? "-"}`],
     ["metrics", "ok", `${Object.keys(m).length} series`],
   ];
   document.getElementById("systemRows").innerHTML = rows.map(([a, b, c]) => `<tr><td>${escapeHtml(a)}</td><td>${escapeHtml(b)}</td><td>${escapeHtml(c)}</td></tr>`).join("");
   document.getElementById("controlUpdated").textContent = "updated";
 }
-
 function pushChart(arr, chart, value) {
   arr.push(value === undefined ? null : Number(value));
   arr.shift();

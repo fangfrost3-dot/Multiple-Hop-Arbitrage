@@ -13,6 +13,7 @@
     "bench:rust": "cargo run --release --manifest-path rust-core/Cargo.toml --bin throughput_bench",
     "build:control-plane": "npm --prefix control-plane run build",
     "run:control-plane": "npm --prefix control-plane run dev",
+    "run:dashboard": "node dashboard/server.mjs",
     "test:reorg": "npx hardhat test test/deterministicReorg.test.ts",
     "test:integration": "npm run test:fork"
   },

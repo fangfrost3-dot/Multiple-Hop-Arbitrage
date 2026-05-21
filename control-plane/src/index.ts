@@ -1,5 +1,6 @@
-import { createServer } from "node:http";
+import { createServer, type IncomingMessage } from "node:http";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,6 +35,7 @@ const routes = await loadRouteConfig(config.ROUTE_CONFIG_PATH);
 const executor = new ExecutorClient(config, routes, cuMeter);
 const candidateNotifier = new CandidateNotifier(config);
 const rpcMonitor = new RpcMonitor(config, cuMeter);
+let minExpectedProfit = config.MIN_EXPECTED_PROFIT;
 let lastHealth = { tracked_pools: 0, tracked_cycles: 0, latest_block: 0 };
 const streamStats = {
   poolUpdatesTotal: 0,
@@ -86,14 +88,14 @@ rust.on("candidate", async (candidate) => {
   );
   void candidateNotifier.notifyCandidate(candidate, {
     hasRoute,
-    minExpectedProfit: config.MIN_EXPECTED_PROFIT.toString(),
+    minExpectedProfit: minExpectedProfit.toString(),
   });
-  if (profit < config.MIN_EXPECTED_PROFIT) {
+  if (profit < minExpectedProfit) {
     log.info(
       {
         cycleId: candidate.cycle_id,
         expectedProfit: candidate.expected_profit,
-        minExpectedProfit: config.MIN_EXPECTED_PROFIT.toString(),
+        minExpectedProfit: minExpectedProfit.toString(),
       },
       "candidate skipped below min expected profit gate",
     );
@@ -164,19 +166,58 @@ createServer((request, response) => {
     return;
   }
 
-  if (request.url === "/healthz") {
+  const path = request.url?.split("?")[0] ?? "/";
+
+  if (request.method === "GET" && (path === "/" || path === "/dashboard")) {
+    void readFile(resolve(here, "../../dashboard/index.html"), "utf8").then((html) => {
+      response.writeHead(200, {
+        ...jsonHeaders,
+        "content-type": "text/html; charset=utf-8",
+      });
+      response.end(html);
+    }).catch((error: unknown) => {
+      log.error({ error }, "dashboard file read failed");
+      response.writeHead(404, jsonHeaders);
+      response.end(JSON.stringify({ error: "dashboard not found" }));
+    });
+    return;
+  }
+
+  if (path === "/healthz") {
     response.writeHead(200, jsonHeaders);
     response.end(JSON.stringify({ ok: true, ...statusPayload() }));
     return;
   }
 
-  if (request.url === "/status") {
+  if (path === "/status") {
     response.writeHead(200, jsonHeaders);
     response.end(JSON.stringify(statusPayload()));
     return;
   }
 
-  if (request.url === "/metrics") {
+  if (path === "/settings") {
+    if (request.method === "GET") {
+      response.writeHead(200, jsonHeaders);
+      response.end(JSON.stringify(settingsPayload()));
+      return;
+    }
+
+    if (request.method === "POST") {
+      void readJsonBody(request).then((body) => {
+        const settings = applySettings(body);
+        response.writeHead(202, jsonHeaders);
+        response.end(JSON.stringify({ ok: true, settings }));
+      }).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        log.error({ error }, "settings update failed");
+        response.writeHead(400, jsonHeaders);
+        response.end(JSON.stringify({ ok: false, error: message }));
+      });
+      return;
+    }
+  }
+
+  if (path === "/metrics") {
     const status = executor.status();
     const rpc = rpcMonitor.snapshot();
     const stream = streamStatus(rpc);
@@ -294,7 +335,7 @@ createServer((request, response) => {
     return;
   }
 
-  if (request.method === "POST" && request.url === "/resume") {
+  if (request.method === "POST" && path === "/resume") {
     void executor.resume().then(() => {
       response.writeHead(202, jsonHeaders);
       response.end(JSON.stringify({ ok: true, executor: executor.status() }));
@@ -306,7 +347,7 @@ createServer((request, response) => {
     return;
   }
 
-  if (request.method === "POST" && request.url === "/pause") {
+  if (request.method === "POST" && path === "/pause") {
     void executor.pauseManual("manual pause via HTTP").then(() => {
       response.writeHead(202, jsonHeaders);
       response.end(JSON.stringify({ ok: true, executor: executor.status() }));
@@ -328,6 +369,7 @@ function statusPayload() {
   const rpc = rpcMonitor.snapshot();
   return {
     engine: lastHealth,
+    settings: settingsPayload(),
     controlPlane: {
       bootstrap: {
         ...bootstrapState,
@@ -339,6 +381,99 @@ function statusPayload() {
     rpc,
     alchemyCu: cuMeter.snapshot(),
   };
+}
+
+function settingsPayload() {
+  return {
+    minExpectedProfit: minExpectedProfit.toString(),
+    executor: executor.settings(),
+    engine: {
+      maxHops: process.env.ENGINE_MAX_HOPS ?? "3",
+      note: "engine max hops is read by rust at process start; restart required after changing ENGINE_MAX_HOPS",
+    },
+  };
+}
+
+function applySettings(body: unknown) {
+  if (!body || typeof body !== "object") {
+    throw new Error("settings body must be an object");
+  }
+
+  const input = body as Record<string, unknown>;
+  if (input.minExpectedProfit !== undefined) {
+    minExpectedProfit = parseBigIntSetting(input.minExpectedProfit, "minExpectedProfit");
+  }
+
+  const executorSettings =
+    input.executor && typeof input.executor === "object"
+      ? input.executor as Record<string, unknown>
+      : input;
+
+  const nextExecutorSettings: Parameters<ExecutorClient["updateSettings"]>[0] = {};
+  if (executorSettings.maxBorrowAmount !== undefined) {
+    nextExecutorSettings.maxBorrowAmount = parseBigIntSetting(executorSettings.maxBorrowAmount, "maxBorrowAmount").toString();
+  }
+  if (executorSettings.maxRouteHops !== undefined) {
+    nextExecutorSettings.maxRouteHops = parsePositiveIntSetting(executorSettings.maxRouteHops, "maxRouteHops", true);
+  }
+  if (executorSettings.minProfitRealizationBps !== undefined) {
+    nextExecutorSettings.minProfitRealizationBps = parseBpsSetting(executorSettings.minProfitRealizationBps, "minProfitRealizationBps");
+  }
+  if (executorSettings.maxGasCostWei !== undefined) {
+    nextExecutorSettings.maxGasCostWei = parseBigIntSetting(executorSettings.maxGasCostWei, "maxGasCostWei").toString();
+  }
+  if (executorSettings.maxCumulativeEstimatedLossWei !== undefined) {
+    nextExecutorSettings.maxCumulativeEstimatedLossWei = parseBigIntSetting(
+      executorSettings.maxCumulativeEstimatedLossWei,
+      "maxCumulativeEstimatedLossWei",
+    ).toString();
+  }
+  if (executorSettings.maxInflight !== undefined) {
+    nextExecutorSettings.maxInflight = parsePositiveIntSetting(executorSettings.maxInflight, "maxInflight", false);
+  }
+
+  const updatedExecutor = Object.keys(nextExecutorSettings).length > 0
+    ? executor.updateSettings(nextExecutorSettings)
+    : executor.settings();
+
+  log.info({ minExpectedProfit: minExpectedProfit.toString(), executor: updatedExecutor }, "runtime settings updated");
+  return settingsPayload();
+}
+
+function parseBigIntSetting(value: unknown, name: string): bigint {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "bigint") {
+    throw new Error(`${name} must be a non-negative integer`);
+  }
+  const parsed = BigInt(String(value).trim());
+  if (parsed < 0n) {
+    throw new Error(`${name} must be non-negative`);
+  }
+  return parsed;
+}
+
+function parsePositiveIntSetting(value: unknown, name: string, allowZero: boolean): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < (allowZero ? 0 : 1)) {
+    throw new Error(`${name} must be ${allowZero ? "non-negative" : "positive"} integer`);
+  }
+  return parsed;
+}
+
+function parseBpsSetting(value: unknown, name: string): number {
+  const parsed = parsePositiveIntSetting(value, name, true);
+  if (parsed > 10_000) {
+    throw new Error(`${name} must be <= 10000`);
+  }
+  return parsed;
+}
+
+async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  const raw = Buffer.concat(chunks).toString("utf8").trim();
+  return raw ? JSON.parse(raw) : {};
 }
 
 function streamStatus(rpc: ReturnType<RpcMonitor["snapshot"]>) {

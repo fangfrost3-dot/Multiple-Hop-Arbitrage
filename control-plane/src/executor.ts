@@ -13,6 +13,7 @@ import type {
   ExecutionOutcomeEntry,
   ExecutionRecord,
   ExecutionRouteConfig,
+  ExecutorRuntimeSettings,
   ExecutorMetrics,
   ExecutorStatus,
   SwapRouteConfig,
@@ -149,21 +150,21 @@ export class ExecutorClient {
   private readonly allowedAdapters?: Set<string>;
   private readonly allowedRouters?: Set<string>;
   private readonly allowedRouteKinds?: Set<SwapRouteConfig["kind"]>;
-  private readonly maxBorrowAmount: bigint;
-  private readonly maxRouteHops: number;
-  private readonly minProfitRealizationBps: bigint;
+  private maxBorrowAmount: bigint;
+  private maxRouteHops: number;
+  private minProfitRealizationBps: bigint;
   private readonly maxConsecutiveFailures: number;
   private readonly maxTotalFailures: number;
-  private readonly maxCumulativeEstimatedLossWei: bigint;
+  private maxCumulativeEstimatedLossWei: bigint;
   private readonly wrappedNativeToken?: string;
   private readonly arbitrumNodeInterfaceAddress?: string;
   private readonly arbitrumL1FeePaddingBps: bigint;
-  private readonly maxGasCostWei: bigint;
+  private maxGasCostWei: bigint;
   private readonly confirmations: number;
   private readonly replacementBumpBps: bigint;
   private readonly stuckTxTimeoutMs: number;
   private readonly maxReplacements: number;
-  private readonly maxInflight: number;
+  private maxInflight: number;
   private readonly routeByCycleId: Map<string, RouteRuntimePlan>;
   private readonly oneInch: OneInchClient;
   private readonly contractInterface = new Interface(flashLoanExecutorAbi);
@@ -1005,7 +1006,43 @@ export class ExecutorClient {
         inflight: this.inflight.size,
       },
       cumulativeEstimatedNetWei: this.cumulativeEstimatedNetWei.toString(),
+      settings: this.settings(),
     };
+  }
+
+  settings(): ExecutorRuntimeSettings {
+    return {
+      maxBorrowAmount: this.maxBorrowAmount.toString(),
+      maxRouteHops: this.maxRouteHops,
+      minProfitRealizationBps: Number(this.minProfitRealizationBps),
+      maxGasCostWei: this.maxGasCostWei.toString(),
+      maxCumulativeEstimatedLossWei: this.maxCumulativeEstimatedLossWei.toString(),
+      maxInflight: this.maxInflight,
+    };
+  }
+
+  updateSettings(settings: Partial<ExecutorRuntimeSettings>): ExecutorRuntimeSettings {
+    if (settings.maxBorrowAmount !== undefined) {
+      this.maxBorrowAmount = BigInt(settings.maxBorrowAmount);
+    }
+    if (settings.maxRouteHops !== undefined) {
+      this.maxRouteHops = settings.maxRouteHops;
+    }
+    if (settings.minProfitRealizationBps !== undefined) {
+      this.minProfitRealizationBps = BigInt(settings.minProfitRealizationBps);
+    }
+    if (settings.maxGasCostWei !== undefined) {
+      this.maxGasCostWei = BigInt(settings.maxGasCostWei);
+    }
+    if (settings.maxCumulativeEstimatedLossWei !== undefined) {
+      this.maxCumulativeEstimatedLossWei = BigInt(settings.maxCumulativeEstimatedLossWei);
+    }
+    if (settings.maxInflight !== undefined) {
+      this.maxInflight = settings.maxInflight;
+    }
+
+    this.log.info({ settings: this.settings() }, "executor runtime settings updated");
+    return this.settings();
   }
 
   async resume(): Promise<void> {
