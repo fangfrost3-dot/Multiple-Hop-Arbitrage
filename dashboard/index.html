@@ -52,6 +52,8 @@
   .fill { height: 100%; background: var(--blue); border-radius: 99px; }
   .setting { display: grid; gap: 5px; min-width: 160px; flex: 1; }
   .setting label { color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+  select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 6px; padding: 5px 8px; font-family: var(--mono); font-size: 11px; outline: none; }
+  .titleControl { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; min-width: 620px; }
   th { color: var(--dim); text-transform: uppercase; letter-spacing: .06em; font-weight: 400; padding: 0 10px 10px 0; text-align: left; border-bottom: 1px solid var(--border); }
   td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border); }
@@ -90,6 +92,7 @@
     <div class="metric"><div class="label">Executor</div><div id="paused" class="value">-</div><div id="pauseReason" class="sub">-</div></div>
     <div class="metric"><div class="label">Pools / Cycles</div><div id="pools" class="value">-</div><div id="engineBlock" class="sub">engine block -</div></div>
     <div class="metric"><div class="label">RPC latency</div><div id="rpcLatency" class="value">-</div><div id="rpcBlock" class="sub">rpc block -</div></div>
+    <div class="metric"><div class="label">RPC window</div><div id="rpcWindowAvg" class="value">-</div><div id="rpcWindowSub" class="sub">p95 -</div></div>
     <div class="metric"><div class="label">Stream updates</div><div id="streamUpdates" class="value">-</div><div id="streamAge" class="sub">age -</div></div>
     <div class="metric"><div class="label">CU / month</div><div id="cuMonth" class="value">-</div><div id="cuTotal" class="sub">total -</div></div>
     <div class="metric"><div class="label">Candidates</div><div id="candidates" class="value">-</div><div id="candidateSub" class="sub">profitable -</div></div>
@@ -135,7 +138,21 @@
   </div>
 
   <div class="grid2">
-    <div class="card"><div class="title"><span>RPC Latency</span><span>ms</span></div><div class="chart"><canvas id="latencyChart"></canvas></div></div>
+    <div class="card">
+      <div class="title">
+        <span>RPC Latency</span>
+        <span class="titleControl">
+          <span id="latencySampleCount">0 samples</span>
+          <select id="latencyWindow" onchange="renderLatencyWindow()">
+            <option value="300000">5m</option>
+            <option value="900000" selected>15m</option>
+            <option value="3600000">1h</option>
+            <option value="21600000">6h</option>
+          </select>
+        </span>
+      </div>
+      <div class="chart"><canvas id="latencyChart"></canvas></div>
+    </div>
     <div class="card"><div class="title"><span>CU Burn</span><span>per hour</span></div><div class="chart"><canvas id="cuChart"></canvas></div></div>
   </div>
 
@@ -150,6 +167,7 @@ document.getElementById("baseUrl").value = defaultBase;
 
 const latencyHistory = Array(40).fill(null);
 const cuHistory = Array(40).fill(null);
+const latencySamples = [];
 let lastStreamUpdates = 0;
 let lastSettingsJson = "";
 let lastSupervisor = undefined;
@@ -356,7 +374,7 @@ function renderStatus(s, m) {
   renderExecRows(exec, s.executor);
   renderSafetyRows(s);
   renderSystemRows(s, m);
-  pushChart(latencyHistory, latencyChart, rpc.lastLatencyMs);
+  recordLatencySample(rpc.lastLatencyMs);
   pushChart(cuHistory, cuChart, cu.estimatedCuPerHour);
 
   if ((stream.poolUpdatesTotal ?? 0) > lastStreamUpdates) {
@@ -419,6 +437,48 @@ function renderSystemRows(s, m) {
   ];
   document.getElementById("systemRows").innerHTML = rows.map(([a, b, c]) => `<tr><td>${escapeHtml(a)}</td><td>${escapeHtml(b)}</td><td>${escapeHtml(c)}</td></tr>`).join("");
   document.getElementById("controlUpdated").textContent = "updated";
+}
+function recordLatencySample(value) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    renderLatencyWindow();
+    return;
+  }
+  const now = Date.now();
+  latencySamples.push({ t: now, v: Number(value) });
+  const oldestToKeep = now - 6 * 60 * 60 * 1000;
+  while (latencySamples.length && latencySamples[0].t < oldestToKeep) latencySamples.shift();
+  renderLatencyWindow();
+}
+function renderLatencyWindow() {
+  const windowMs = Number(document.getElementById("latencyWindow")?.value ?? 900000);
+  const cutoff = Date.now() - windowMs;
+  const samples = latencySamples.filter(s => s.t >= cutoff);
+  const values = samples.map(s => s.v).filter(v => Number.isFinite(v));
+  document.getElementById("latencySampleCount").textContent = `${values.length} samples`;
+  if (!values.length) {
+    setText("rpcWindowAvg", "-");
+    document.getElementById("rpcWindowSub").textContent = "p95 -";
+    latencyChart.data.labels = [];
+    latencyChart.data.datasets[0].data = [];
+    latencyChart.update("none");
+    return;
+  }
+
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const p95 = percentile(values, 95);
+  setText("rpcWindowAvg", `${fmt(avg)}ms`, avg < 100 ? "okText" : avg < 250 ? "warnText" : "badText");
+  document.getElementById("rpcWindowSub").textContent = `p95 ${fmt(p95)}ms / min ${fmt(min)} / max ${fmt(max)}`;
+
+  latencyChart.data.labels = samples.map(s => new Date(s.t).toLocaleTimeString());
+  latencyChart.data.datasets[0].data = samples.map(s => s.v);
+  latencyChart.update("none");
+}
+function percentile(values, pct) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(sorted.length - 1, Math.ceil((pct / 100) * sorted.length) - 1);
+  return sorted[Math.max(0, index)];
 }
 function pushChart(arr, chart, value) {
   arr.push(value === undefined ? null : Number(value));
