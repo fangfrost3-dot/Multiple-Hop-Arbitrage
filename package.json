@@ -14,6 +14,8 @@
     "build:control-plane": "npm --prefix control-plane run build",
     "run:control-plane": "npm --prefix control-plane run dev",
     "run:dashboard": "node dashboard/server.mjs",
+    "generate:routes": "npm --prefix control-plane run generate:routes",
+    "generate:routes:dry": "npm --prefix control-plane run generate:routes:dry",
     "test:reorg": "npx hardhat test test/deterministicReorg.test.ts",
     "test:integration": "npm run test:fork"
   },

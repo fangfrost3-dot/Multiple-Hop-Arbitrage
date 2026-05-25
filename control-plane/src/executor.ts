@@ -76,6 +76,7 @@ interface RouteRuntimePlan {
   profitToken: string;
   profitTokenLower: string;
   minProfit: bigint;
+  maxBorrowAmount?: bigint;
   swaps: PreparedSwap[];
   routeHops: number;
 }
@@ -144,7 +145,9 @@ export class ExecutorClient {
   private readonly contractAddress?: string;
   private readonly profitRecipient?: string;
   private readonly journalPath: string;
+  private readonly paperJournalPath: string;
   private readonly outcomePath: string;
+  private readonly paperTrading: boolean;
   private readonly allowedBorrowTokens?: Set<string>;
   private readonly allowedProfitTokens?: Set<string>;
   private readonly allowedAdapters?: Set<string>;
@@ -172,6 +175,7 @@ export class ExecutorClient {
   private readonly inflight = new Map<string, ExecutionRecord>();
   private readonly gasEstimateCache = new Map<string, CachedGasEstimate>();
   private readonly metrics: ExecutorMetrics = {
+    paperTrades: 0,
     submitted: 0,
     submittedPublic: 0,
     submittedRelay: 0,
@@ -206,6 +210,7 @@ export class ExecutorClient {
           profitToken: route.profitToken,
           profitTokenLower: route.profitToken.toLowerCase(),
           minProfit: BigInt(route.minProfit),
+          maxBorrowAmount: route.maxBorrowAmount ? BigInt(route.maxBorrowAmount) : undefined,
           swaps: route.swaps.map((swap) => {
             if (swap.kind === "v2") {
               return {
@@ -259,7 +264,9 @@ export class ExecutorClient {
     this.profitRecipient = config.EXECUTOR_PROFIT_RECIPIENT;
     this.submissionMode = config.EXECUTOR_SUBMISSION_MODE;
     this.allowPublicMempool = config.EXECUTOR_ALLOW_PUBLIC_MEMPOOL;
+    this.paperTrading = config.EXECUTOR_PAPER_TRADING;
     this.journalPath = config.EXECUTOR_JOURNAL_PATH;
+    this.paperJournalPath = config.EXECUTOR_PAPER_JOURNAL_PATH;
     this.outcomePath = config.EXECUTOR_OUTCOME_PATH;
     this.allowedBorrowTokens = this.parseAddressSet(config.EXECUTOR_ALLOWED_BORROW_TOKENS);
     this.allowedProfitTokens = this.parseAddressSet(config.EXECUTOR_ALLOWED_PROFIT_TOKENS);
@@ -332,21 +339,6 @@ export class ExecutorClient {
       });
       return;
     }
-    const submissionDisabledReason = this.submissionDisabledReason();
-    if (submissionDisabledReason) {
-      this.metrics.riskRejected += 1;
-      this.log.info({ cycleId: candidate.cycle_id, reason: submissionDisabledReason }, "candidate rejected because submission is not ready");
-      await this.writeJournal({
-        timestamp: Date.now(),
-        event: "risk_rejected",
-        cycleId: candidate.cycle_id,
-        reason: submissionDisabledReason,
-        borrowToken: candidate.borrow_token,
-        borrowAmount: candidate.borrow_amount,
-        expectedProfit: candidate.expected_profit,
-      });
-      return;
-    }
     const routePlan = this.routeByCycleId.get(candidate.cycle_id);
     if (!routePlan) {
       this.log.debug({ cycleId: candidate.cycle_id }, "skipping candidate without route config");
@@ -371,14 +363,6 @@ export class ExecutorClient {
     }
     const validationMs = mark();
 
-    if (!this.contractAddress || !this.profitRecipient || !this.provider) {
-      this.log.info({ cycleId: candidate.cycle_id }, "executor not fully configured; candidate not submitted");
-      return;
-    }
-    if (this.inflight.size >= this.maxInflight) {
-      this.log.info({ cycleId: candidate.cycle_id, inflight: this.inflight.size }, "skipping candidate because max inflight transactions reached");
-      return;
-    }
     if (routePlan.borrowTokenLower !== candidate.borrow_token.toLowerCase()) {
       this.log.error({ cycleId: candidate.cycle_id }, "route borrow token does not match candidate");
       return;
@@ -411,6 +395,60 @@ export class ExecutorClient {
           effectiveMinProfit: effectiveMinProfit.toString(),
         },
       });
+      return;
+    }
+
+    if (this.paperTrading) {
+      this.metrics.paperTrades += 1;
+      this.log.info(
+        {
+          cycleId: candidate.cycle_id,
+          borrowToken: candidate.borrow_token,
+          borrowAmount: candidate.borrow_amount,
+          expectedProfit: candidate.expected_profit,
+          routeHops,
+        },
+        "paper trade accepted",
+      );
+      await this.writePaperTrade({
+        timestamp: Date.now(),
+        event: "paper_trade",
+        cycleId: candidate.cycle_id,
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+        routeHops,
+        details: {
+          grossOutput: candidate.gross_output,
+          effectiveMinProfit: effectiveMinProfit.toString(),
+          touchedPools: candidate.touched_pools.join(","),
+        },
+      });
+      return;
+    }
+
+    const submissionDisabledReason = this.submissionDisabledReason();
+    if (submissionDisabledReason) {
+      this.metrics.riskRejected += 1;
+      this.log.info({ cycleId: candidate.cycle_id, reason: submissionDisabledReason }, "candidate rejected because submission is not ready");
+      await this.writeJournal({
+        timestamp: Date.now(),
+        event: "risk_rejected",
+        cycleId: candidate.cycle_id,
+        reason: submissionDisabledReason,
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+      });
+      return;
+    }
+
+    if (!this.contractAddress || !this.profitRecipient || !this.provider) {
+      this.log.info({ cycleId: candidate.cycle_id }, "executor not fully configured; candidate not submitted");
+      return;
+    }
+    if (this.inflight.size >= this.maxInflight) {
+      this.log.info({ cycleId: candidate.cycle_id, inflight: this.inflight.size }, "skipping candidate because max inflight transactions reached");
       return;
     }
 
@@ -1000,6 +1038,7 @@ export class ExecutorClient {
   status(): ExecutorStatus {
     return {
       paused: this.paused,
+      paperTrading: this.paperTrading,
       pauseReason: this.pauseReason,
       metrics: {
         ...this.metrics,
@@ -1046,9 +1085,11 @@ export class ExecutorClient {
   }
 
   async resume(): Promise<void> {
-    const submissionDisabledReason = this.submissionDisabledReason();
-    if (submissionDisabledReason) {
-      throw new Error(`cannot resume executor: ${submissionDisabledReason}`);
+    if (!this.paperTrading) {
+      const submissionDisabledReason = this.submissionDisabledReason();
+      if (submissionDisabledReason) {
+        throw new Error(`cannot resume executor: ${submissionDisabledReason}`);
+      }
     }
 
     this.paused = false;
@@ -1117,8 +1158,12 @@ export class ExecutorClient {
       return "profit token not allowlisted";
     }
 
-    if (this.maxBorrowAmount > 0n && BigInt(candidate.borrow_amount) > this.maxBorrowAmount) {
-      return "borrow amount above configured maximum";
+    const candidateBorrowAmount = BigInt(candidate.borrow_amount);
+    const effectiveMaxBorrowAmount = route.maxBorrowAmount ?? this.maxBorrowAmount;
+    if (effectiveMaxBorrowAmount > 0n && candidateBorrowAmount > effectiveMaxBorrowAmount) {
+      return route.maxBorrowAmount
+        ? "borrow amount above route maximum"
+        : "borrow amount above configured maximum";
     }
 
     if (this.maxRouteHops > 0 && route.swaps.length > this.maxRouteHops) {
@@ -1335,6 +1380,11 @@ export class ExecutorClient {
   private async writeJournal(entry: ExecutionJournalEntry): Promise<void> {
     await mkdir(dirname(this.journalPath), { recursive: true });
     await appendFile(this.journalPath, `${JSON.stringify(entry)}\n`, "utf8");
+  }
+
+  private async writePaperTrade(entry: ExecutionJournalEntry): Promise<void> {
+    await mkdir(dirname(this.paperJournalPath), { recursive: true });
+    await appendFile(this.paperJournalPath, `${JSON.stringify(entry)}\n`, "utf8");
   }
 
   private async writeOutcome(entry: ExecutionOutcomeEntry): Promise<void> {

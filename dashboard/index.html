@@ -393,6 +393,8 @@ function renderRpcRows(rpc) {
 }
 function renderExecRows(exec, executor) {
   document.getElementById("execRows").innerHTML = [
+    ["paper", executor?.paperTrading ? "on" : "off"],
+    ["paper trades", exec.paperTrades ?? 0],
     ["submitted", exec.submitted ?? 0],
     ["confirmed", exec.confirmed ?? 0],
     ["reverted", exec.reverted ?? 0],

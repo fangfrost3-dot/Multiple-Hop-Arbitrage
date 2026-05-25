@@ -88,6 +88,16 @@ npm run build:rust
 npm run build:control-plane
 ```
 
+Optional: regenerate the allowlisted semi-dynamic V3 fee-tier routes before building:
+
+```bash
+npm run generate:routes:dry
+npm run generate:routes
+npm run build:control-plane
+```
+
+The generator reads `control-plane/config/route-generator.fork.json`, checks configured token pairs and Uniswap V3 fee tiers against live RPC liquidity, then updates `pools.fork.json` and `routes.fork.json`. It does not allow arbitrary runtime routes.
+
 Root `npm install` is not required for running the live control-plane on AWS.
 
 ## 7. Create The Private Key File
@@ -143,6 +153,9 @@ CANDIDATE_NOTIFICATION_WEBHOOK_URL=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 TELEGRAM_MESSAGE_THREAD_ID=
+ERROR_ALERTS_ENABLED=true
+ERROR_ALERT_COOLDOWN_MS=300000
+ERROR_ALERT_TIMEOUT_MS=5000
 CANDIDATE_NOTIFICATION_MIN_EXPECTED_PROFIT=0
 CANDIDATE_NOTIFICATION_COOLDOWN_MS=0
 CANDIDATE_NOTIFICATION_TIMEOUT_MS=5000
@@ -158,7 +171,9 @@ WS_PORT=8080
 STREAM_MAX_BLOCK_GAP=20
 STREAM_REORG_LOOKBACK_BLOCKS=12
 STABLE_POLL_INTERVAL_MS=0
-V3_POLL_INTERVAL_MS=0
+# Deeper 500k-5m routes are mostly Uniswap V3 fee-tier routes.
+# Keep this enabled so those pools are refreshed after bootstrap.
+V3_POLL_INTERVAL_MS=3000
 
 MIN_EXPECTED_PROFIT=0
 ENGINE_MIN_CYCLE_EDGE_PROFIT_BPS=0
@@ -167,6 +182,8 @@ ENGINE_MAX_HOPS=3
 EXECUTOR_PRIVATE_KEY=
 EXECUTOR_PRIVATE_KEY_PATH=./secrets/executor.key
 EXECUTOR_ALLOW_INLINE_PRIVATE_KEY=false
+EXECUTOR_PAPER_TRADING=false
+EXECUTOR_PAPER_JOURNAL_PATH=./logs/paper_trades.jsonl
 
 EXECUTOR_CONTRACT_ADDRESS=0x7c6c58D4cDE75389FCe701920eD261961f48F3B0
 EXECUTOR_PROFIT_RECIPIENT=YOUR_PROFIT_WALLET_ADDRESS
@@ -209,6 +226,39 @@ Before unpausing, set nonzero risk caps either in `.env` and restart, or from th
 - `EXECUTOR_MAX_CUMULATIVE_ESTIMATED_LOSS_WEI`
 
 Runtime dashboard settings apply immediately but reset after process restart unless also saved in `.env`.
+
+## 72-Hour Paper Trade Run
+
+Use this mode when you want the bot to scan, pass candidates through route/risk/profit gates, and write accepted paper trades without signing or submitting transactions.
+
+In `~/Multiple-Hop-Arbitrage/control-plane/.env` set:
+
+```env
+EXECUTOR_PAPER_TRADING=true
+EXECUTOR_START_PAUSED=false
+EXECUTOR_PAPER_JOURNAL_PATH=./logs/paper_trades.jsonl
+EXECUTOR_ALLOW_PUBLIC_MEMPOOL=false
+```
+
+Paper mode does not need live submission credentials to submit transactions. Keep the dashboard private through SSH tunnel or VPN.
+
+Check paper mode after restart:
+
+```bash
+curl -s http://127.0.0.1:9091/status | jq '{paper:.executor.paperTrading,paused:.executor.paused,paperTrades:.executor.metrics.paperTrades,pools:.engine.tracked_pools,routes:.engine.tracked_cycles}'
+```
+
+Watch the paper trade journal:
+
+```bash
+tail -f ~/Multiple-Hop-Arbitrage/control-plane/logs/paper_trades.jsonl
+```
+
+After 72 hours, summarize route activity:
+
+```bash
+jq -r '[.cycleId,.borrowToken,.borrowAmount,.expectedProfit] | @tsv' ~/Multiple-Hop-Arbitrage/control-plane/logs/paper_trades.jsonl | sort | uniq -c | sort -nr | head -50
+```
 
 ## 9. Start The Dashboard Supervisor
 
@@ -515,4 +565,3 @@ Current acceptable ranges:
 ```
 
 To chase `20ms`, test different AWS regions and/or dedicated RPC providers. Do not optimize this before private submission, risk caps, and route quality are handled.
-

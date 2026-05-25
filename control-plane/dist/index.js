@@ -9,6 +9,7 @@ import { loadBootstrapPools } from "./bootstrap.js";
 import { CandidateNotifier } from "./candidateNotifier.js";
 import { loadConfig } from "./config.js";
 import { CuMeter } from "./cuMeter.js";
+import { ErrorAlertNotifier } from "./errorAlertNotifier.js";
 import { ExecutorClient } from "./executor.js";
 import { createLogger } from "./logger.js";
 import { loadPoolConfig } from "./poolConfig.js";
@@ -32,6 +33,7 @@ const stream = new PoolStream(config, poolConfig, cuMeter);
 const routes = await loadRouteConfig(config.ROUTE_CONFIG_PATH);
 const executor = new ExecutorClient(config, routes, cuMeter);
 const candidateNotifier = new CandidateNotifier(config);
+const errorAlertNotifier = new ErrorAlertNotifier(config);
 const rpcMonitor = new RpcMonitor(config, cuMeter);
 let minExpectedProfit = config.MIN_EXPECTED_PROFIT;
 let lastHealth = { tracked_pools: 0, tracked_cycles: 0, latest_block: 0 };
@@ -49,6 +51,7 @@ const bootstrapState = {
 let bootstrapInFlight = false;
 let bootstrapRetryTimer;
 rpcMonitor.start();
+errorAlertNotifier.start();
 setInterval(() => {
     rust.healthcheck();
 }, 5_000).unref();
@@ -190,6 +193,12 @@ createServer((request, response) => {
             "# HELP rn_executor_paused Whether the executor is paused.",
             "# TYPE rn_executor_paused gauge",
             `rn_executor_paused ${status.paused ? 1 : 0}`,
+            "# HELP rn_executor_paper_trading Whether paper trading mode is enabled.",
+            "# TYPE rn_executor_paper_trading gauge",
+            `rn_executor_paper_trading ${status.paperTrading ? 1 : 0}`,
+            "# HELP rn_executor_paper_trades_total Accepted paper trades.",
+            "# TYPE rn_executor_paper_trades_total counter",
+            `rn_executor_paper_trades_total ${status.metrics.paperTrades}`,
             "# HELP rn_executor_submitted_total Submitted execution transactions.",
             "# TYPE rn_executor_submitted_total counter",
             `rn_executor_submitted_total ${status.metrics.submitted}`,

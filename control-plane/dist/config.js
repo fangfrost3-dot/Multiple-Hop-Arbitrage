@@ -72,6 +72,9 @@ export const configSchema = z.object({
     TELEGRAM_BOT_TOKEN: z.string().optional(),
     TELEGRAM_CHAT_ID: z.string().optional(),
     TELEGRAM_MESSAGE_THREAD_ID: optionalPositiveIntSchema,
+    ERROR_ALERTS_ENABLED: envBoolean(true),
+    ERROR_ALERT_COOLDOWN_MS: z.coerce.number().int().nonnegative().default(300_000),
+    ERROR_ALERT_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
     CANDIDATE_NOTIFICATION_MIN_EXPECTED_PROFIT: z.coerce.bigint().default(0n),
     CANDIDATE_NOTIFICATION_COOLDOWN_MS: z.coerce.number().int().nonnegative().default(0),
     CANDIDATE_NOTIFICATION_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
@@ -87,6 +90,8 @@ export const configSchema = z.object({
     EXECUTOR_PRIVATE_KEY: optionalPrivateKeySchema,
     EXECUTOR_PRIVATE_KEY_PATH: z.string().optional(),
     EXECUTOR_ALLOW_INLINE_PRIVATE_KEY: envBoolean(false),
+    EXECUTOR_PAPER_TRADING: envBoolean(false),
+    EXECUTOR_PAPER_JOURNAL_PATH: z.string().default("./logs/paper_trades.jsonl"),
     EXECUTOR_CONTRACT_ADDRESS: optionalAddressSchema,
     EXECUTOR_PROFIT_RECIPIENT: optionalAddressSchema,
     EXECUTOR_JOURNAL_PATH: z.string().default("./logs/executions.jsonl"),
@@ -124,6 +129,9 @@ export const configSchema = z.object({
         }
     }
     if (config.EXECUTOR_START_PAUSED) {
+        return;
+    }
+    if (config.EXECUTOR_PAPER_TRADING) {
         return;
     }
     if (config.EXECUTOR_SUBMISSION_MODE === "relay_only" && !config.PRIVATE_RELAY_RPC_URL) {

@@ -1,3 +1,10 @@
+const errorListeners = new Set();
+export function onErrorLog(listener) {
+    errorListeners.add(listener);
+    return () => {
+        errorListeners.delete(listener);
+    };
+}
 export function createLogger(scope) {
     return {
         info(payload, message) {
@@ -18,4 +25,14 @@ function write(level, scope, payload, message) {
             ? {}
             : { payload };
     console.log(JSON.stringify({ level, scope, message, ...body }));
+    if (level === "ERROR") {
+        for (const listener of errorListeners) {
+            try {
+                listener({ level, scope, message, payload: body });
+            }
+            catch {
+                // Logging must never fail application code.
+            }
+        }
+    }
 }

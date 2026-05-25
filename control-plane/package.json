@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "generate:routes": "node scripts/generate_routes.js",
+    "generate:routes:dry": "node scripts/generate_routes.js --dry-run"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

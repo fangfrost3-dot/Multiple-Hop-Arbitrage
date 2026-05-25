@@ -29,7 +29,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
   },
   {
     "cycleId": "sushi-arb-weth-v2->uni-weth-arb-v3-500",
@@ -61,7 +62,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
   },
   {
     "cycleId": "camelot-weth-arb-v2->uni-arb-weth-v3-500",
@@ -93,7 +95,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "2702702702702702702"
   },
   {
     "cycleId": "sushi-weth-arb-v2->uni-arb-weth-v3-500",
@@ -125,7 +128,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "2702702702702702702"
   },
   {
     "cycleId": "camelot-weth-usdce-v2->uni-usdce-weth-v3-500",
@@ -157,7 +161,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "2702702702702702702"
   },
   {
     "cycleId": "sushi-weth-usdce-v2->uni-usdce-weth-v3-500",
@@ -189,7 +194,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "2702702702702702702"
   },
   {
     "cycleId": "camelot-usdce-weth-v2->uni-weth-usdce-v3-500",
@@ -221,7 +227,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000"
   },
   {
     "cycleId": "sushi-usdce-weth-v2->uni-weth-usdce-v3-500",
@@ -253,7 +260,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000"
   },
   {
     "cycleId": "sushi-weth-usdc-v2->uni-usdc-weth-v3-500",
@@ -285,7 +293,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "2702702702702702702"
   },
   {
     "cycleId": "sushi-usdc-weth-v2->uni-weth-usdc-v3-500",
@@ -317,7 +326,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000"
   },
   {
     "cycleId": "camelot-usdc-usdce-v2->uni-usdce-usdc-v3-100",
@@ -349,7 +359,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000"
   },
   {
     "cycleId": "camelot-usdce-usdc-v2->uni-usdc-usdce-v3-100",
@@ -381,7 +392,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000"
   },
   {
     "cycleId": "sushi-usdce-dai-v2->uni-dai-usdce-v3-100",
@@ -413,7 +425,8 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000"
   },
   {
     "cycleId": "sushi-dai-usdce-v2->uni-usdce-dai-v3-100",
@@ -445,6 +458,1743 @@
         "deadlineSeconds": 60,
         "sqrtPriceLimitX96": "0"
       }
-    ]
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdt-v3-500->uni-usdt-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdt-v3-3000->uni-usdt-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdt-weth-v3-500->uni-weth-usdt-v3-3000",
+    "borrowToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "profitToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdt-weth-v3-3000->uni-weth-usdt-v3-500",
+    "borrowToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "profitToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-arb-usdc-v3-500->uni-usdc-arb-v3-3000",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-arb-usdc-v3-3000->uni-usdc-arb-v3-500",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-usdc-arb-v3-500->uni-arb-usdc-v3-3000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-arb-v3-3000->uni-arb-usdc-v3-500",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-arb-v3-500->uni-arb-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-arb-v3-3000->uni-arb-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-arb-weth-v3-500->uni-weth-arb-v3-3000",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-arb-weth-v3-3000->uni-weth-arb-v3-500",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-weth-arb-v3-500->uni-arb-weth-v3-10000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-arb-v3-10000->uni-arb-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-arb-weth-v3-500->uni-weth-arb-v3-10000",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-arb-weth-v3-10000->uni-weth-arb-v3-500",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-weth-wbtc-v3-500->uni-wbtc-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-wbtc-v3-3000->uni-wbtc-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-wbtc-weth-v3-500->uni-weth-wbtc-v3-3000",
+    "borrowToken": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "profitToken": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "9523809"
+  },
+  {
+    "cycleId": "uni-wbtc-weth-v3-3000->uni-weth-wbtc-v3-500",
+    "borrowToken": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "profitToken": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "9523809"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-500->uni-usdc-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-3000->uni-usdc-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-500->uni-weth-usdc-v3-3000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-3000->uni-weth-usdc-v3-500",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-arb-v3-3000->uni-arb-weth-v3-10000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-arb-v3-10000->uni-arb-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-arb-weth-v3-3000->uni-weth-arb-v3-10000",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-arb-weth-v3-10000->uni-weth-arb-v3-3000",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-100->uni-usdc-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-500->uni-usdc-weth-v3-100",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-100->uni-weth-usdc-v3-500",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-500->uni-weth-usdc-v3-100",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-100->uni-usdc-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-3000->uni-usdc-weth-v3-100",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-100->uni-weth-usdc-v3-3000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-3000->uni-weth-usdc-v3-100",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-100->uni-usdc-weth-v3-10000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-10000->uni-usdc-weth-v3-100",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-100->uni-weth-usdc-v3-10000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-10000->uni-weth-usdc-v3-100",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 100,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-500->uni-usdc-weth-v3-10000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-10000->uni-usdc-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-500->uni-weth-usdc-v3-10000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-10000->uni-weth-usdc-v3-500",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-3000->uni-usdc-weth-v3-10000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdc-v3-10000->uni-usdc-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-3000->uni-weth-usdc-v3-10000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdc-weth-v3-10000->uni-weth-usdc-v3-3000",
+    "borrowToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "profitToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-weth-usdce-v3-500->uni-usdce-weth-v3-3000",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-weth-usdce-v3-3000->uni-usdce-weth-v3-500",
+    "borrowToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "profitToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "2702702702702702702"
+  },
+  {
+    "cycleId": "uni-usdce-weth-v3-500->uni-weth-usdce-v3-3000",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdce-weth-v3-3000->uni-weth-usdce-v3-500",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 3000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-arb-usdce-v3-500->uni-usdce-arb-v3-10000",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-arb-usdce-v3-10000->uni-usdce-arb-v3-500",
+    "borrowToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "profitToken": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000000000000000"
+  },
+  {
+    "cycleId": "uni-usdce-arb-v3-500->uni-arb-usdce-v3-10000",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
+  },
+  {
+    "cycleId": "uni-usdce-arb-v3-10000->uni-arb-usdce-v3-500",
+    "borrowToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "profitToken": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "minProfit": "0",
+    "swaps": [
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 10000,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      },
+      {
+        "kind": "v3",
+        "adapter": "0xA7039C2583E1b5a340D82d0F8E7DA696e01D7a87",
+        "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+        "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+        "fee": 500,
+        "amountOutMin": "1",
+        "deadlineSeconds": 60,
+        "sqrtPriceLimitX96": "0"
+      }
+    ],
+    "maxBorrowAmount": "10000000000"
   }
 ]

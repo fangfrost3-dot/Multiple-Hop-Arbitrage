@@ -60,7 +60,7 @@ export interface ExecutionRecord {
 
 export interface ExecutionJournalEntry {
   timestamp: number;
-  event: "risk_rejected" | "submitted" | "confirmed" | "reverted" | "dropped" | "replaced" | "paused" | "resumed";
+  event: "paper_trade" | "risk_rejected" | "submitted" | "confirmed" | "reverted" | "dropped" | "replaced" | "paused" | "resumed";
   cycleId: string;
   txHash?: string;
   nonce?: number;
@@ -92,6 +92,7 @@ export interface ExecutionOutcomeEntry {
 }
 
 export interface ExecutorMetrics {
+  paperTrades: number;
   submitted: number;
   submittedPublic: number;
   submittedRelay: number;
@@ -107,6 +108,7 @@ export interface ExecutorMetrics {
 
 export interface ExecutorStatus {
   paused: boolean;
+  paperTrading: boolean;
   pauseReason?: string;
   metrics: ExecutorMetrics;
   cumulativeEstimatedNetWei: string;
@@ -215,5 +217,6 @@ export interface ExecutionRouteConfig {
   borrowToken: string;
   profitToken: string;
   minProfit: string;
+  maxBorrowAmount?: string;
   swaps: SwapRouteConfig[];
 }

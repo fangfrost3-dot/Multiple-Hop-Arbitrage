@@ -45,6 +45,7 @@ const executionRouteSchema = z.array(z.object({
     borrowToken: addressSchema,
     profitToken: addressSchema,
     minProfit: z.string(),
+    maxBorrowAmount: z.string().optional(),
     swaps: z.array(z.union([v2RouteSchema, v3RouteSchema, oneInchRouteSchema])).min(1),
 }).superRefine((route, ctx) => {
     if (route.profitToken.toLowerCase() !== route.borrowToken.toLowerCase()) {

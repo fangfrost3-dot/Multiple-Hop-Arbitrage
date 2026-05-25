@@ -244,5 +244,305 @@
     "tokenIn": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
     "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
     "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdt-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x641C00A822e8b671738d32a431a4Fb6074E5c79d",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdt-weth-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x641C00A822e8b671738d32a431a4Fb6074E5c79d",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdt-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc82819F72A9e77E2c0c3A69B3196478f44303cf4",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdt-weth-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc82819F72A9e77E2c0c3A69B3196478f44303cf4",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-arb-usdc-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xb0f6cA40411360c03d41C5fFc5F179b8403CdcF8",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-arb-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xb0f6cA40411360c03d41C5fFc5F179b8403CdcF8",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-arb-usdc-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xaEBDcA1Bc8d89177EbE2308d62af5e74885DcCc3",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-arb-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xaEBDcA1Bc8d89177EbE2308d62af5e74885DcCc3",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-arb-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x92c63d0e701CAAe670C9415d91C474F686298f00",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-arb-weth-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x92c63d0e701CAAe670C9415d91C474F686298f00",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-arb-v3-10000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x92fd143A8FA0C84e016C2765648B9733b0aa519e",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 100
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-arb-weth-v3-10000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x92fd143A8FA0C84e016C2765648B9733b0aa519e",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 100
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-wbtc-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x2f5e87C9312fa29aed5c179E456625D79015299c",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-wbtc-weth-v3-500",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x2f5e87C9312fa29aed5c179E456625D79015299c",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 5
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-wbtc-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x149e36E72726e0BceA5c59d40df2c43F60f5A22D",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-wbtc-weth-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x149e36E72726e0BceA5c59d40df2c43F60f5A22D",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdc-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc473e2aEE3441BF9240Be85eb122aBB059A3B57c",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-weth-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xc473e2aEE3441BF9240Be85eb122aBB059A3B57c",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-usdt-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xbE3aD6a5669Dc0B8b12FeBC03608860C31E2eef6",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdt-usdc-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xbE3aD6a5669Dc0B8b12FeBC03608860C31E2eef6",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdc-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x6f38e884725a116C9C7fBF208e79FE8828a2595F",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-weth-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x6f38e884725a116C9C7fBF208e79FE8828a2595F",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdc-v3-10000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x42FC852A750BA93D5bf772ecdc857e87a86403a9",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 100
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-weth-v3-10000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x42FC852A750BA93D5bf772ecdc857e87a86403a9",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 100
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-weth-usdce-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x17c14D2c404D167802b16C450d3c99F88F2c4F4d",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdce-weth-v3-3000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x17c14D2c404D167802b16C450d3c99F88F2c4F4d",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "feeBps": 30
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-arb-usdce-v3-10000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xa8328bF492Ba1B77aD6381B3F7567D942b000baf",
+    "handler": "uniswap_v3",
+    "tokenIn": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "tokenOut": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "feeBps": 100
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdce-arb-v3-10000",
+    "dex": "uniswap-v3",
+    "poolAddress": "0xa8328bF492Ba1B77aD6381B3F7567D942b000baf",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "tokenOut": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    "feeBps": 100
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-usdc-dai-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x7CF803e8d82A50504180f417B8bC7a493C0a0503",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenOut": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "feeBps": 1
+  },
+  {
+    "kind": "v3",
+    "poolId": "uni-dai-usdc-v3-100",
+    "dex": "uniswap-v3",
+    "poolAddress": "0x7CF803e8d82A50504180f417B8bC7a493C0a0503",
+    "handler": "uniswap_v3",
+    "tokenIn": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+    "tokenOut": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "feeBps": 1
   }
 ]
