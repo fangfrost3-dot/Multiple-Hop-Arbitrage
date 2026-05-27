@@ -120,6 +120,7 @@ pub enum EngineMessage {
         tracked_pools: usize,
         tracked_cycles: usize,
         latest_block: u64,
+        routes_evaluated_total: u64,
         bellman_ford_candidates_total: u64,
         simulated_cycles_total: u64,
         profitable_candidates_total: u64,

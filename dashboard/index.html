@@ -366,8 +366,9 @@ function renderStatus(s, m) {
   document.getElementById("streamAge").textContent = stream.lastUpdateAgeMs === undefined ? "no stream update yet" : `age ${fmt(stream.lastUpdateAgeMs)}ms`;
   setText("cuMonth", fmt(cu.estimatedCuPerMonth));
   document.getElementById("cuTotal").textContent = `total ${fmt(cu.estimatedTotalCu)} CU`;
-  setText("candidates", fmt(s.engine?.simulated_cycles_total ?? 0));
-  document.getElementById("candidateSub").textContent = `profitable ${fmt(s.engine?.profitable_candidates_total ?? 0)}`;
+  setText("candidates", fmt(s.engine?.routes_evaluated_total ?? s.engine?.simulated_cycles_total ?? 0));
+  document.getElementById("candidateSub").textContent =
+    `sim ${fmt(s.engine?.simulated_cycles_total ?? 0)} / profitable ${fmt(s.engine?.profitable_candidates_total ?? 0)}`;
 
   if (settings && JSON.stringify(settings) !== lastSettingsJson) fillSettings(settings);
   renderRpcRows(rpc);

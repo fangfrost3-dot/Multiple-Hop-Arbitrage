@@ -7,7 +7,16 @@ import type { ExecutionCandidate, PoolSnapshot, PoolUpdate } from "./types.js";
 
 type RustMessage =
   | { type: "ready" }
-  | { type: "health"; tracked_pools: number; tracked_cycles: number; latest_block: number }
+  | {
+      type: "health";
+      tracked_pools: number;
+      tracked_cycles: number;
+      latest_block: number;
+      routes_evaluated_total: number;
+      bellman_ford_candidates_total: number;
+      simulated_cycles_total: number;
+      profitable_candidates_total: number;
+    }
   | {
       type: "candidate";
       cycle_id: string;

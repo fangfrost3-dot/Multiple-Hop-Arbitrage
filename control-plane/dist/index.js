@@ -36,7 +36,15 @@ const candidateNotifier = new CandidateNotifier(config);
 const errorAlertNotifier = new ErrorAlertNotifier(config);
 const rpcMonitor = new RpcMonitor(config, cuMeter);
 let minExpectedProfit = config.MIN_EXPECTED_PROFIT;
-let lastHealth = { tracked_pools: 0, tracked_cycles: 0, latest_block: 0 };
+let lastHealth = {
+    tracked_pools: 0,
+    tracked_cycles: 0,
+    latest_block: 0,
+    routes_evaluated_total: 0,
+    bellman_ford_candidates_total: 0,
+    simulated_cycles_total: 0,
+    profitable_candidates_total: 0,
+};
 const streamStats = {
     poolUpdatesTotal: 0,
     lastUpdateAt: 0,
@@ -244,6 +252,18 @@ createServer((request, response) => {
             "# HELP rn_engine_latest_block Latest block processed by the Rust engine.",
             "# TYPE rn_engine_latest_block gauge",
             `rn_engine_latest_block ${lastHealth.latest_block}`,
+            "# HELP rn_engine_routes_evaluated_total Route cycles evaluated by the Rust engine.",
+            "# TYPE rn_engine_routes_evaluated_total counter",
+            `rn_engine_routes_evaluated_total ${lastHealth.routes_evaluated_total}`,
+            "# HELP rn_engine_bellman_ford_candidates_total Bellman-Ford candidate cycles discovered by the Rust engine.",
+            "# TYPE rn_engine_bellman_ford_candidates_total counter",
+            `rn_engine_bellman_ford_candidates_total ${lastHealth.bellman_ford_candidates_total}`,
+            "# HELP rn_engine_simulated_cycles_total Cycle simulations attempted by the Rust engine.",
+            "# TYPE rn_engine_simulated_cycles_total counter",
+            `rn_engine_simulated_cycles_total ${lastHealth.simulated_cycles_total}`,
+            "# HELP rn_engine_profitable_candidates_total Profitable candidates found by the Rust engine.",
+            "# TYPE rn_engine_profitable_candidates_total counter",
+            `rn_engine_profitable_candidates_total ${lastHealth.profitable_candidates_total}`,
             "# HELP rn_stream_pool_updates_total Pool updates forwarded from the control-plane stream to Rust.",
             "# TYPE rn_stream_pool_updates_total counter",
             `rn_stream_pool_updates_total ${stream.poolUpdatesTotal}`,

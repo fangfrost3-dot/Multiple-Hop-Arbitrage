@@ -6,7 +6,7 @@ use crate::simulator::{simulate_cycle, SimulationConfig};
 use crate::state::{StateStore, UpdateOutcome};
 use anyhow::Result;
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 #[derive(Debug, Clone, Default)]
@@ -48,6 +48,10 @@ pub struct HotPathEngine {
     simulation: SimulationConfig,
     last_candidate_profit: HashMap<String, i128>,
     replay_window: ReplayWindow,
+    routes_evaluated_total: u64,
+    bellman_ford_candidates_total: u64,
+    simulated_cycles_total: u64,
+    profitable_candidates_total: u64,
 }
 
 impl HotPathEngine {
@@ -59,6 +63,10 @@ impl HotPathEngine {
             simulation: config.simulation,
             last_candidate_profit: HashMap::new(),
             replay_window: ReplayWindow::default(),
+            routes_evaluated_total: 0,
+            bellman_ford_candidates_total: 0,
+            simulated_cycles_total: 0,
+            profitable_candidates_total: 0,
         }
     }
 
@@ -156,10 +164,33 @@ impl HotPathEngine {
                                 .filter(|pool| pool_is_eligible(pool, &self.prune))
                                 .collect::<Vec<_>>();
 
-                            let candidates = bellman_ford_negative_cycles(&eligible, &update.pool_id, self.prune.max_hops)
+                            let affected_cycles = self.graph.affected_cycles(&update.pool_id);
+                            self.routes_evaluated_total = self
+                                .routes_evaluated_total
+                                .saturating_add(affected_cycles.len() as u64);
+
+                            let bellman_ford_cycles = bellman_ford_negative_cycles(&eligible, &update.pool_id, self.prune.max_hops);
+                            self.bellman_ford_candidates_total = self
+                                .bellman_ford_candidates_total
+                                .saturating_add(bellman_ford_cycles.len() as u64);
+
+                            let mut seen_cycles = HashSet::new();
+                            let cycles = affected_cycles
+                                .into_iter()
+                                .chain(bellman_ford_cycles.into_iter())
+                                .filter(|cycle| seen_cycles.insert(cycle.id.clone()))
+                                .collect::<Vec<_>>();
+                            self.simulated_cycles_total = self
+                                .simulated_cycles_total
+                                .saturating_add(cycles.len() as u64);
+
+                            let candidates = cycles
                                 .into_par_iter()
                                 .filter_map(|cycle| simulate_cycle(&self.state, &cycle, &self.simulation))
                                 .collect::<Vec<_>>();
+                            self.profitable_candidates_total = self
+                                .profitable_candidates_total
+                                .saturating_add(candidates.len() as u64);
 
                             for candidate in candidates {
                                 let previous_profit = self.last_candidate_profit.get(&candidate.cycle_id).copied();
@@ -241,9 +272,10 @@ impl HotPathEngine {
                 tracked_pools: self.state.len(),
                 tracked_cycles: self.graph.cycle_count(),
                 latest_block: self.state.latest_block(),
-                bellman_ford_candidates_total: 0,
-                simulated_cycles_total: 0,
-                profitable_candidates_total: 0,
+                routes_evaluated_total: self.routes_evaluated_total,
+                bellman_ford_candidates_total: self.bellman_ford_candidates_total,
+                simulated_cycles_total: self.simulated_cycles_total,
+                profitable_candidates_total: self.profitable_candidates_total,
             },
         )
         .await
