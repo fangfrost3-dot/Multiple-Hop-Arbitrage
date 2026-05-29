@@ -11,6 +11,7 @@ pub struct SimulationConfig {
     pub optimization_steps: usize,
     pub stable_max_imbalance_bps: u32,
     pub min_cycle_edge_profit_bps: u32,
+    pub allow_v3_approximation: bool,
 }
 
 impl Default for SimulationConfig {
@@ -23,6 +24,7 @@ impl Default for SimulationConfig {
             optimization_steps: 12,
             stable_max_imbalance_bps: 500,
             min_cycle_edge_profit_bps: 0,
+            allow_v3_approximation: false,
         }
     }
 }
@@ -83,6 +85,9 @@ fn cycle_marginal_profit_bps(state: &StateStore, cycle: &Cycle, config: &Simulat
     let mut rate = 1.0_f64;
     for pool_id in &cycle.pool_ids {
         let pool = state.get(pool_id)?;
+        if pool.sqrt_price_x96 > 0 && !config.allow_v3_approximation {
+            return None;
+        }
         let pool_rate = marginal_output_rate(
             pool.pool_kind,
             pool.reserve_in,
@@ -194,6 +199,9 @@ fn simulate_input(state: &StateStore, cycle: &Cycle, amount_in: u128, config: &S
     let mut amount = amount_in;
     for pool_id in &cycle.pool_ids {
         let pool = state.get(pool_id)?;
+        if pool.sqrt_price_x96 > 0 && !config.allow_v3_approximation {
+            return None;
+        }
         amount = match pool.pool_kind {
             PoolKind::Xyk => simulate_xyk_swap(amount, pool.reserve_in, pool.reserve_out, pool.fee_bps)?,
             PoolKind::Stable => simulate_stable_swap(
@@ -457,6 +465,7 @@ mod tests {
             optimization_steps: 8,
             stable_max_imbalance_bps: 500,
             min_cycle_edge_profit_bps: 0,
+            allow_v3_approximation: false,
         }
     }
 }

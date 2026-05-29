@@ -16,6 +16,7 @@ fn main() {
         min_reserve: 1,
         max_hops: 3,
         max_fee_bps: 100,
+        allow_v3_approximation: false,
     };
     let simulation = SimulationConfig {
         gas_cost: 0,
@@ -25,6 +26,7 @@ fn main() {
         optimization_steps: 12,
         stable_max_imbalance_bps: 500,
         min_cycle_edge_profit_bps: read_env_u32("BENCH_MIN_CYCLE_EDGE_PROFIT_BPS", 0),
+        allow_v3_approximation: false,
     };
 
     let state = StateStore::default();
