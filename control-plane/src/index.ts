@@ -243,6 +243,12 @@ createServer((request, response) => {
       "# HELP rn_executor_paper_trades_total Accepted paper trades.",
       "# TYPE rn_executor_paper_trades_total counter",
       `rn_executor_paper_trades_total ${status.metrics.paperTrades}`,
+      "# HELP rn_executor_paper_validated_total Paper trades that passed eth_call validation.",
+      "# TYPE rn_executor_paper_validated_total counter",
+      `rn_executor_paper_validated_total ${status.metrics.paperValidated}`,
+      "# HELP rn_executor_paper_validation_failed_total Paper candidates that failed eth_call validation.",
+      "# TYPE rn_executor_paper_validation_failed_total counter",
+      `rn_executor_paper_validation_failed_total ${status.metrics.paperValidationFailed}`,
       "# HELP rn_executor_submitted_total Submitted execution transactions.",
       "# TYPE rn_executor_submitted_total counter",
       `rn_executor_submitted_total ${status.metrics.submitted}`,
@@ -447,6 +453,9 @@ function applySettings(body: unknown) {
   }
   if (executorSettings.minProfitRealizationBps !== undefined) {
     nextExecutorSettings.minProfitRealizationBps = parseBpsSetting(executorSettings.minProfitRealizationBps, "minProfitRealizationBps");
+  }
+  if (executorSettings.maxProfitBps !== undefined) {
+    nextExecutorSettings.maxProfitBps = parsePositiveIntSetting(executorSettings.maxProfitBps, "maxProfitBps", true);
   }
   if (executorSettings.maxGasCostWei !== undefined) {
     nextExecutorSettings.maxGasCostWei = parseBigIntSetting(executorSettings.maxGasCostWei, "maxGasCostWei").toString();

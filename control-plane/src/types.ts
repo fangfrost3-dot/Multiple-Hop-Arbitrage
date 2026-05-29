@@ -60,7 +60,17 @@ export interface ExecutionRecord {
 
 export interface ExecutionJournalEntry {
   timestamp: number;
-  event: "paper_trade" | "risk_rejected" | "submitted" | "confirmed" | "reverted" | "dropped" | "replaced" | "paused" | "resumed";
+  event:
+    | "paper_trade"
+    | "paper_validation_failed"
+    | "risk_rejected"
+    | "submitted"
+    | "confirmed"
+    | "reverted"
+    | "dropped"
+    | "replaced"
+    | "paused"
+    | "resumed";
   cycleId: string;
   txHash?: string;
   nonce?: number;
@@ -93,6 +103,8 @@ export interface ExecutionOutcomeEntry {
 
 export interface ExecutorMetrics {
   paperTrades: number;
+  paperValidated: number;
+  paperValidationFailed: number;
   submitted: number;
   submittedPublic: number;
   submittedRelay: number;
@@ -119,6 +131,7 @@ export interface ExecutorRuntimeSettings {
   maxBorrowAmount: string;
   maxRouteHops: number;
   minProfitRealizationBps: number;
+  maxProfitBps: number;
   maxGasCostWei: string;
   maxCumulativeEstimatedLossWei: string;
   maxInflight: number;

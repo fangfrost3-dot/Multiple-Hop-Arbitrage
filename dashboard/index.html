@@ -106,6 +106,7 @@
         <div class="setting"><label>Max borrow amount</label><input id="maxBorrowAmount" inputmode="numeric" /></div>
         <div class="setting"><label>Max route hops</label><input id="maxRouteHops" type="number" min="0" step="1" /></div>
         <div class="setting"><label>Min expected profit</label><input id="minExpectedProfit" inputmode="numeric" /></div>
+        <div class="setting"><label>Max profit bps</label><input id="maxProfitBps" type="number" min="0" step="1" /></div>
         <div class="setting"><label>Max gas cost wei</label><input id="maxGasCostWei" inputmode="numeric" /></div>
         <div class="setting"><label>Max loss wei</label><input id="maxLossWei" inputmode="numeric" /></div>
         <div class="setting"><label>Max inflight</label><input id="maxInflight" type="number" min="1" step="1" /></div>
@@ -279,6 +280,7 @@ function fillSettings(settings) {
   document.getElementById("maxBorrowAmount").value = ex.maxBorrowAmount ?? "0";
   document.getElementById("maxRouteHops").value = ex.maxRouteHops ?? "0";
   document.getElementById("minExpectedProfit").value = settings.minExpectedProfit ?? "0";
+  document.getElementById("maxProfitBps").value = ex.maxProfitBps ?? "0";
   document.getElementById("maxGasCostWei").value = ex.maxGasCostWei ?? "0";
   document.getElementById("maxLossWei").value = ex.maxCumulativeEstimatedLossWei ?? "0";
   document.getElementById("maxInflight").value = ex.maxInflight ?? "1";
@@ -290,6 +292,7 @@ async function saveSettings() {
     executor: {
       maxBorrowAmount: document.getElementById("maxBorrowAmount").value.trim(),
       maxRouteHops: Number(document.getElementById("maxRouteHops").value),
+      maxProfitBps: Number(document.getElementById("maxProfitBps").value),
       maxGasCostWei: document.getElementById("maxGasCostWei").value.trim(),
       maxCumulativeEstimatedLossWei: document.getElementById("maxLossWei").value.trim(),
       maxInflight: Number(document.getElementById("maxInflight").value),
@@ -396,6 +399,8 @@ function renderExecRows(exec, executor) {
   document.getElementById("execRows").innerHTML = [
     ["paper", executor?.paperTrading ? "on" : "off"],
     ["paper trades", exec.paperTrades ?? 0],
+    ["eth_call ok", exec.paperValidated ?? 0],
+    ["eth_call fail", exec.paperValidationFailed ?? 0],
     ["submitted", exec.submitted ?? 0],
     ["confirmed", exec.confirmed ?? 0],
     ["reverted", exec.reverted ?? 0],

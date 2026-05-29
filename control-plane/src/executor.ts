@@ -148,14 +148,17 @@ export class ExecutorClient {
   private readonly paperJournalPath: string;
   private readonly outcomePath: string;
   private readonly paperTrading: boolean;
+  private readonly paperValidateCall: boolean;
   private readonly allowedBorrowTokens?: Set<string>;
   private readonly allowedProfitTokens?: Set<string>;
   private readonly allowedAdapters?: Set<string>;
   private readonly allowedRouters?: Set<string>;
   private readonly allowedRouteKinds?: Set<SwapRouteConfig["kind"]>;
+  private readonly blockedCycleIds?: Set<string>;
   private maxBorrowAmount: bigint;
   private maxRouteHops: number;
   private minProfitRealizationBps: bigint;
+  private maxProfitBps: bigint;
   private readonly maxConsecutiveFailures: number;
   private readonly maxTotalFailures: number;
   private maxCumulativeEstimatedLossWei: bigint;
@@ -176,6 +179,8 @@ export class ExecutorClient {
   private readonly gasEstimateCache = new Map<string, CachedGasEstimate>();
   private readonly metrics: ExecutorMetrics = {
     paperTrades: 0,
+    paperValidated: 0,
+    paperValidationFailed: 0,
     submitted: 0,
     submittedPublic: 0,
     submittedRelay: 0,
@@ -265,6 +270,7 @@ export class ExecutorClient {
     this.submissionMode = config.EXECUTOR_SUBMISSION_MODE;
     this.allowPublicMempool = config.EXECUTOR_ALLOW_PUBLIC_MEMPOOL;
     this.paperTrading = config.EXECUTOR_PAPER_TRADING;
+    this.paperValidateCall = config.EXECUTOR_PAPER_VALIDATE_CALL;
     this.journalPath = config.EXECUTOR_JOURNAL_PATH;
     this.paperJournalPath = config.EXECUTOR_PAPER_JOURNAL_PATH;
     this.outcomePath = config.EXECUTOR_OUTCOME_PATH;
@@ -273,9 +279,11 @@ export class ExecutorClient {
     this.allowedAdapters = this.parseAddressSet(config.EXECUTOR_ALLOWED_ADAPTERS);
     this.allowedRouters = this.parseAddressSet(config.EXECUTOR_ALLOWED_ROUTERS);
     this.allowedRouteKinds = this.parseRouteKindSet(config.EXECUTOR_ALLOWED_ROUTE_KINDS);
+    this.blockedCycleIds = this.parseStringSet(config.EXECUTOR_BLOCKED_CYCLE_IDS);
     this.maxBorrowAmount = config.EXECUTOR_MAX_BORROW_AMOUNT;
     this.maxRouteHops = config.EXECUTOR_MAX_ROUTE_HOPS;
     this.minProfitRealizationBps = BigInt(config.EXECUTOR_MIN_PROFIT_REALIZATION_BPS);
+    this.maxProfitBps = BigInt(config.EXECUTOR_MAX_PROFIT_BPS);
     this.maxConsecutiveFailures = config.EXECUTOR_MAX_CONSECUTIVE_FAILURES;
     this.maxTotalFailures = config.EXECUTOR_MAX_TOTAL_FAILURES;
     this.maxCumulativeEstimatedLossWei = config.EXECUTOR_MAX_CUMULATIVE_ESTIMATED_LOSS_WEI;
@@ -399,31 +407,7 @@ export class ExecutorClient {
     }
 
     if (this.paperTrading) {
-      this.metrics.paperTrades += 1;
-      this.log.info(
-        {
-          cycleId: candidate.cycle_id,
-          borrowToken: candidate.borrow_token,
-          borrowAmount: candidate.borrow_amount,
-          expectedProfit: candidate.expected_profit,
-          routeHops,
-        },
-        "paper trade accepted",
-      );
-      await this.writePaperTrade({
-        timestamp: Date.now(),
-        event: "paper_trade",
-        cycleId: candidate.cycle_id,
-        borrowToken: candidate.borrow_token,
-        borrowAmount: candidate.borrow_amount,
-        expectedProfit: candidate.expected_profit,
-        routeHops,
-        details: {
-          grossOutput: candidate.gross_output,
-          effectiveMinProfit: effectiveMinProfit.toString(),
-          touchedPools: candidate.touched_pools.join(","),
-        },
-      });
+      await this.handlePaperCandidate(candidate, routePlan, effectiveMinProfit, mark);
       return;
     }
 
@@ -1054,6 +1038,7 @@ export class ExecutorClient {
       maxBorrowAmount: this.maxBorrowAmount.toString(),
       maxRouteHops: this.maxRouteHops,
       minProfitRealizationBps: Number(this.minProfitRealizationBps),
+      maxProfitBps: Number(this.maxProfitBps),
       maxGasCostWei: this.maxGasCostWei.toString(),
       maxCumulativeEstimatedLossWei: this.maxCumulativeEstimatedLossWei.toString(),
       maxInflight: this.maxInflight,
@@ -1069,6 +1054,9 @@ export class ExecutorClient {
     }
     if (settings.minProfitRealizationBps !== undefined) {
       this.minProfitRealizationBps = BigInt(settings.minProfitRealizationBps);
+    }
+    if (settings.maxProfitBps !== undefined) {
+      this.maxProfitBps = BigInt(settings.maxProfitBps);
     }
     if (settings.maxGasCostWei !== undefined) {
       this.maxGasCostWei = BigInt(settings.maxGasCostWei);
@@ -1107,6 +1095,141 @@ export class ExecutorClient {
 
   async pauseManual(reason = "manual pause"): Promise<void> {
     await this.pause(reason);
+  }
+
+  private async handlePaperCandidate(
+    candidate: ExecutionCandidate,
+    routePlan: RouteRuntimePlan,
+    effectiveMinProfit: bigint,
+    mark: () => number,
+  ): Promise<void> {
+    const routeHops = routePlan.routeHops;
+    const baseDetails = {
+      grossOutput: candidate.gross_output,
+      effectiveMinProfit: effectiveMinProfit.toString(),
+      touchedPools: candidate.touched_pools.join(","),
+    };
+
+    if (!this.paperValidateCall) {
+      this.metrics.paperTrades += 1;
+      this.log.info(
+        {
+          cycleId: candidate.cycle_id,
+          borrowToken: candidate.borrow_token,
+          borrowAmount: candidate.borrow_amount,
+          expectedProfit: candidate.expected_profit,
+          routeHops,
+        },
+        "paper trade accepted without eth_call validation",
+      );
+      await this.writePaperTrade({
+        timestamp: Date.now(),
+        event: "paper_trade",
+        cycleId: candidate.cycle_id,
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+        routeHops,
+        details: {
+          ...baseDetails,
+          validation: "disabled",
+        },
+      });
+      return;
+    }
+
+    if (!this.contractAddress || !this.provider || !this.address) {
+      const reason = "paper candidate validation unavailable: missing provider, contract, or signer address";
+      this.metrics.paperValidationFailed += 1;
+      this.log.info({ cycleId: candidate.cycle_id, reason }, "paper candidate validation failed");
+      await this.writePaperTrade({
+        timestamp: Date.now(),
+        event: "paper_validation_failed",
+        cycleId: candidate.cycle_id,
+        reason,
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+        routeHops,
+        details: baseDetails,
+      });
+      return;
+    }
+
+    try {
+      const params = await this.encodeExecutionPlan(routePlan, BigInt(candidate.borrow_amount), effectiveMinProfit);
+      const calldata = this.contractInterface.encodeFunctionData("requestFlashLoan", [
+        candidate.borrow_token,
+        BigInt(candidate.borrow_amount),
+        params,
+      ]);
+      const feeData = await this.getCachedFeeData();
+      const gasPrice = feeData.maxFeePerGas ?? feeData.gasPrice;
+      if (!gasPrice) {
+        throw new Error("missing gas price data");
+      }
+
+      const gasCost = await this.getGasCostEstimate(candidate.cycle_id, this.address, calldata, gasPrice);
+      if (this.maxGasCostWei > 0n && gasCost.totalGasCostWei > this.maxGasCostWei) {
+        throw new Error(`estimated gas cost ${gasCost.totalGasCostWei} exceeds max ${this.maxGasCostWei}`);
+      }
+
+      await this.provider.call({
+        to: this.contractAddress,
+        from: this.address,
+        data: calldata,
+        gasLimit: (gasCost.gasLimit * 12n) / 10n,
+        maxFeePerGas: feeData.maxFeePerGas ?? undefined,
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
+        gasPrice: feeData.maxFeePerGas ? undefined : gasPrice,
+      });
+      this.cuMeter?.recordMethod("eth_call");
+
+      this.metrics.paperTrades += 1;
+      this.metrics.paperValidated += 1;
+      this.log.info(
+        {
+          cycleId: candidate.cycle_id,
+          borrowToken: candidate.borrow_token,
+          borrowAmount: candidate.borrow_amount,
+          expectedProfit: candidate.expected_profit,
+          estimatedGasCostWei: gasCost.totalGasCostWei.toString(),
+          validationMs: mark(),
+        },
+        "paper trade eth_call validation passed",
+      );
+      await this.writePaperTrade({
+        timestamp: Date.now(),
+        event: "paper_trade",
+        cycleId: candidate.cycle_id,
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+        routeHops,
+        details: {
+          ...baseDetails,
+          validation: "eth_call_passed",
+          estimatedGasCostWei: gasCost.totalGasCostWei.toString(),
+          estimatedL2GasCostWei: gasCost.l2GasCostWei.toString(),
+          estimatedL1CalldataFeeWei: gasCost.l1CalldataFeeWei.toString(),
+          gasLimit: gasCost.gasLimit.toString(),
+        },
+      });
+    } catch (error) {
+      this.metrics.paperValidationFailed += 1;
+      this.log.info({ cycleId: candidate.cycle_id, error }, "paper trade eth_call validation failed");
+      await this.writePaperTrade({
+        timestamp: Date.now(),
+        event: "paper_validation_failed",
+        cycleId: candidate.cycle_id,
+        reason: error instanceof Error ? error.message : String(error),
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+        routeHops,
+        details: baseDetails,
+      });
+    }
   }
 
   private async sendTransaction(
@@ -1150,6 +1273,10 @@ export class ExecutorClient {
   }
 
   private rejectReason(candidate: ExecutionCandidate, route: RouteRuntimePlan): string | undefined {
+    if (this.blockedCycleIds?.has(candidate.cycle_id)) {
+      return "cycle id blocklisted";
+    }
+
     if (this.allowedBorrowTokens && !this.allowedBorrowTokens.has(candidate.borrow_token.toLowerCase())) {
       return "borrow token not allowlisted";
     }
@@ -1164,6 +1291,13 @@ export class ExecutorClient {
       return route.maxBorrowAmount
         ? "borrow amount above route maximum"
         : "borrow amount above configured maximum";
+    }
+
+    if (this.maxProfitBps > 0n && candidateBorrowAmount > 0n && BigInt(candidate.expected_profit) > 0n) {
+      const profitBps = (BigInt(candidate.expected_profit) * 10_000n) / candidateBorrowAmount;
+      if (profitBps > this.maxProfitBps) {
+        return `expected profit above configured sanity bps (${profitBps} > ${this.maxProfitBps})`;
+      }
     }
 
     if (this.maxRouteHops > 0 && route.swaps.length > this.maxRouteHops) {
@@ -1211,6 +1345,19 @@ export class ExecutorClient {
       .filter((entry): entry is SwapRouteConfig["kind"] => entry === "v2" || entry === "v3" || entry === "one_inch");
 
     return validKinds.length > 0 ? new Set(validKinds) : undefined;
+  }
+
+  private parseStringSet(value?: string): Set<string> | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const normalized = value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+
+    return normalized.length > 0 ? new Set(normalized) : undefined;
   }
 
   private signerForTarget(target: "public" | "relay") {
