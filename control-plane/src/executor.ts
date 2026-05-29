@@ -149,6 +149,8 @@ export class ExecutorClient {
   private readonly outcomePath: string;
   private readonly paperTrading: boolean;
   private readonly paperValidateCall: boolean;
+  private readonly validateRouteQuotes: boolean;
+  private readonly v3QuoterAddress?: string;
   private readonly allowedBorrowTokens?: Set<string>;
   private readonly allowedProfitTokens?: Set<string>;
   private readonly allowedAdapters?: Set<string>;
@@ -271,6 +273,8 @@ export class ExecutorClient {
     this.allowPublicMempool = config.EXECUTOR_ALLOW_PUBLIC_MEMPOOL;
     this.paperTrading = config.EXECUTOR_PAPER_TRADING;
     this.paperValidateCall = config.EXECUTOR_PAPER_VALIDATE_CALL;
+    this.validateRouteQuotes = config.EXECUTOR_VALIDATE_ROUTE_QUOTES;
+    this.v3QuoterAddress = config.UNISWAP_V3_QUOTER_ADDRESS;
     this.journalPath = config.EXECUTOR_JOURNAL_PATH;
     this.paperJournalPath = config.EXECUTOR_PAPER_JOURNAL_PATH;
     this.outcomePath = config.EXECUTOR_OUTCOME_PATH;
@@ -401,6 +405,38 @@ export class ExecutorClient {
           configuredMinProfit: routePlan.minProfit.toString(),
           minProfitRealizationBps: Number(this.minProfitRealizationBps),
           effectiveMinProfit: effectiveMinProfit.toString(),
+        },
+      });
+      return;
+    }
+
+    const quoteCheck = await this.validateCandidateRouteQuote(candidate, routePlan, effectiveMinProfit);
+    if (!quoteCheck.ok) {
+      this.metrics.riskRejected += 1;
+      this.log.info(
+        {
+          cycleId: candidate.cycle_id,
+          reason: quoteCheck.reason,
+          quotedOutput: quoteCheck.finalOutput?.toString(),
+          quotedProfit: quoteCheck.quotedProfit?.toString(),
+          expectedProfit: candidate.expected_profit,
+        },
+        "candidate rejected by route quote validation",
+      );
+      await this.writeJournal({
+        timestamp: Date.now(),
+        event: "risk_rejected",
+        cycleId: candidate.cycle_id,
+        reason: quoteCheck.reason,
+        borrowToken: candidate.borrow_token,
+        borrowAmount: candidate.borrow_amount,
+        expectedProfit: candidate.expected_profit,
+        routeHops,
+        details: {
+          quotedOutput: quoteCheck.finalOutput?.toString(),
+          quotedProfit: quoteCheck.quotedProfit?.toString(),
+          effectiveMinProfit: effectiveMinProfit.toString(),
+          validation: "route_quote",
         },
       });
       return;
@@ -645,6 +681,91 @@ export class ExecutorClient {
 
     const realizedProfitFloor = (expectedProfit * this.minProfitRealizationBps) / 10_000n;
     return realizedProfitFloor > route.minProfit ? realizedProfitFloor : route.minProfit;
+  }
+
+  private async validateCandidateRouteQuote(
+    candidate: ExecutionCandidate,
+    route: RouteRuntimePlan,
+    effectiveMinProfit: bigint,
+  ): Promise<{ ok: true; finalOutput: bigint; quotedProfit: bigint } | { ok: false; reason: string; finalOutput?: bigint; quotedProfit?: bigint }> {
+    if (!this.validateRouteQuotes) {
+      const borrowAmount = BigInt(candidate.borrow_amount);
+      return { ok: true, finalOutput: borrowAmount + BigInt(candidate.expected_profit), quotedProfit: BigInt(candidate.expected_profit) };
+    }
+    if (!this.provider) {
+      return { ok: false, reason: "route quote validation unavailable: provider missing" };
+    }
+
+    const borrowAmount = BigInt(candidate.borrow_amount);
+    try {
+      const finalOutput = await this.quoteRoute(route, borrowAmount);
+      const quotedProfit = finalOutput - borrowAmount;
+      if (quotedProfit <= effectiveMinProfit) {
+        return {
+          ok: false,
+          reason: "candidate rejected below route quote profit gate",
+          finalOutput,
+          quotedProfit,
+        };
+      }
+      return { ok: true, finalOutput, quotedProfit };
+    } catch (error) {
+      return {
+        ok: false,
+        reason: `route quote validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
+
+  private async quoteRoute(route: RouteRuntimePlan, amountIn: bigint): Promise<bigint> {
+    let amount = amountIn;
+    for (const swap of route.swaps) {
+      amount = await this.quoteSwap(swap, amount);
+    }
+    return amount;
+  }
+
+  private async quoteSwap(swap: PreparedSwap, amountIn: bigint): Promise<bigint> {
+    if (!this.provider) {
+      throw new Error("provider missing");
+    }
+    if (swap.kind === "v2") {
+      const router = new Contract(
+        swap.router,
+        ["function getAmountsOut(uint256 amountIn,address[] calldata path) view returns (uint256[] memory amounts)"],
+        this.provider,
+      );
+      const amounts = await router.getAmountsOut(amountIn, swap.path) as bigint[];
+      this.cuMeter?.recordMethod("eth_call");
+      const amountOut = amounts.at(-1);
+      if (amountOut === undefined) {
+        throw new Error("v2 quote returned empty amounts");
+      }
+      return BigInt(amountOut);
+    }
+    if (swap.kind === "v3") {
+      if (!this.v3QuoterAddress) {
+        throw new Error("v3 quoter address missing");
+      }
+      const quoter = new Contract(
+        this.v3QuoterAddress,
+        [
+          "function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96)) returns (uint256 amountOut,uint160 sqrtPriceX96After,uint32 initializedTicksCrossed,uint256 gasEstimate)",
+        ],
+        this.provider,
+      );
+      const quote = await quoter.quoteExactInputSingle.staticCall({
+        tokenIn: swap.tokenIn,
+        tokenOut: swap.tokenOut,
+        amountIn,
+        fee: swap.fee,
+        sqrtPriceLimitX96: swap.sqrtPriceLimitX96,
+      });
+      this.cuMeter?.recordMethod("eth_call");
+      return BigInt(quote.amountOut);
+    }
+
+    throw new Error("route quote validation does not support one_inch swaps");
   }
 
   private async encodeRouteData(swap: PreparedSwap, amountIn?: bigint): Promise<string> {
@@ -1039,6 +1160,7 @@ export class ExecutorClient {
       maxRouteHops: this.maxRouteHops,
       minProfitRealizationBps: Number(this.minProfitRealizationBps),
       maxProfitBps: Number(this.maxProfitBps),
+      validateRouteQuotes: this.validateRouteQuotes,
       maxGasCostWei: this.maxGasCostWei.toString(),
       maxCumulativeEstimatedLossWei: this.maxCumulativeEstimatedLossWei.toString(),
       maxInflight: this.maxInflight,

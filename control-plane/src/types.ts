@@ -132,6 +132,7 @@ export interface ExecutorRuntimeSettings {
   maxRouteHops: number;
   minProfitRealizationBps: number;
   maxProfitBps: number;
+  validateRouteQuotes: boolean;
   maxGasCostWei: string;
   maxCumulativeEstimatedLossWei: string;
   maxInflight: number;

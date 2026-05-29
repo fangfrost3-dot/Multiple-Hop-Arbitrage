@@ -108,6 +108,8 @@ export const configSchema = z.object({
   EXECUTOR_ALLOW_INLINE_PRIVATE_KEY: envBoolean(false),
   EXECUTOR_PAPER_TRADING: envBoolean(false),
   EXECUTOR_PAPER_VALIDATE_CALL: envBoolean(true),
+  EXECUTOR_VALIDATE_ROUTE_QUOTES: envBoolean(true),
+  UNISWAP_V3_QUOTER_ADDRESS: optionalAddressSchema.default("0x61fFE014bA17989E743c5F6cB21bF9697530B21e"),
   EXECUTOR_PAPER_JOURNAL_PATH: z.string().default("./logs/paper_trades.jsonl"),
   EXECUTOR_CONTRACT_ADDRESS: optionalAddressSchema,
   EXECUTOR_PROFIT_RECIPIENT: optionalAddressSchema,
