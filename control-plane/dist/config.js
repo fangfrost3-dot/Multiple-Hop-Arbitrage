@@ -87,6 +87,7 @@ export const configSchema = z.object({
     STABLE_POLL_INTERVAL_MS: z.coerce.number().int().nonnegative().default(0),
     V3_POLL_INTERVAL_MS: z.coerce.number().int().nonnegative().default(0),
     MIN_EXPECTED_PROFIT: z.coerce.bigint().default(0n),
+    ENGINE_DISABLED_POOL_IDS: z.string().optional(),
     EXECUTOR_PRIVATE_KEY: optionalPrivateKeySchema,
     EXECUTOR_PRIVATE_KEY_PATH: z.string().optional(),
     EXECUTOR_ALLOW_INLINE_PRIVATE_KEY: envBoolean(false),

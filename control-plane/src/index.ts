@@ -17,6 +17,7 @@ import { RpcMonitor } from "./rpcMonitor.js";
 import { loadRouteConfig } from "./routeConfig.js";
 import { PoolStream } from "./poolStream.js";
 import { RustBridge } from "./rustBridge.js";
+import type { PoolConfig } from "./types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const envPaths = [resolve(here, "../../.env"), resolve(here, "../.env")];
@@ -30,7 +31,7 @@ const config = await loadConfig(process.env);
 const log = createLogger("control-plane");
 const cuMeter = new CuMeter();
 const rust = new RustBridge(config.RUST_BINARY);
-const poolConfig = await loadPoolConfig(config.POOL_CONFIG_PATH);
+const poolConfig = filterDisabledPools(await loadPoolConfig(config.POOL_CONFIG_PATH), config.ENGINE_DISABLED_POOL_IDS);
 const stream = new PoolStream(config, poolConfig, cuMeter);
 const routes = await loadRouteConfig(config.ROUTE_CONFIG_PATH);
 const executor = new ExecutorClient(config, routes, cuMeter);
@@ -69,6 +70,16 @@ let bootstrapInFlight = false;
 let bootstrapRetryTimer: NodeJS.Timeout | undefined;
 rpcMonitor.start();
 errorAlertNotifier.start();
+
+if (config.ENGINE_DISABLED_POOL_IDS) {
+  log.info(
+    {
+      disabledPoolIds: config.ENGINE_DISABLED_POOL_IDS,
+      activePoolConfigs: poolConfig.length,
+    },
+    "engine disabled pool filter applied",
+  );
+}
 
 setInterval(() => {
   rust.healthcheck();
@@ -542,6 +553,33 @@ async function bootstrap(): Promise<void> {
     cuMeter,
   });
   rust.bootstrap(pools);
+}
+
+function filterDisabledPools(pools: PoolConfig[], disabledPoolIds?: string): PoolConfig[] {
+  const disabled = parseCsvSet(disabledPoolIds);
+  if (disabled.size === 0) {
+    return pools;
+  }
+
+  return pools.filter((pool) => {
+    if (!("poolId" in pool)) {
+      return true;
+    }
+    return !disabled.has(pool.poolId);
+  });
+}
+
+function parseCsvSet(value?: string): Set<string> {
+  if (!value) {
+    return new Set();
+  }
+
+  return new Set(
+    value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0),
+  );
 }
 
 function scheduleBootstrap(delayMs = 0): void {
